@@ -1,684 +1,26 @@
--- === INICIALIZAÇÃO E VARIÁVEIS ===
-local Plrs = game:GetService("Players")
-local LP = Plrs.LocalPlayer
-local Cam = workspace.CurrentCamera
-local RunS = game:GetService("RunService")
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/Rayfield"))()
 
--- Tabela para guardar os GUIs ESP por player
-local ESPGuis = {}
-
--- Configurações ESP controladas pela UI
-local ESPSettings = {
-    Enabled = false,
-    Boxes = false,
-    Highlights = false,
-    Names = false,
-    Distances = false,
-    Inventory = false,
-    HealthBar = false,
-}
-
--- === FUNÇÃO QUE CRIA O GUI ESP PARA UM PLAYER ===
-local function CreateESPGui(plr)
-    if not plr.Character then return nil end
-    local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-
-    local espGui = Instance.new("BillboardGui")
-    espGui.Name = "TortuguitaESP"
-    espGui.Adornee = hrp
-    espGui.AlwaysOnTop = true
-    espGui.Size = UDim2.new(0, 100, 0, 50)
-    espGui.StudsOffset = Vector3.new(0, 3, 0)
-
-    local box = Instance.new("Frame")
-    box.Name = "Box"
-    box.BackgroundTransparency = 0.6
-    box.BorderSizePixel = 1
-    box.Size = UDim2.new(1, 0, 1, 0)
-    box.Parent = espGui
-    box.Visible = false
-
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Name = "Name"
-    nameLabel.Size = UDim2.new(1, 0, 0, 15)
-    nameLabel.Position = UDim2.new(0, 0, 0, -15)
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = Color3.fromRGB(255,255,255)
-    nameLabel.TextStrokeTransparency = 0
-    nameLabel.Font = Enum.Font.SourceSansBold
-    nameLabel.TextSize = 14
-    nameLabel.Text = ""
-    nameLabel.Parent = espGui
-    nameLabel.Visible = false
-
-    local distLabel = Instance.new("TextLabel")
-    distLabel.Name = "Distance"
-    distLabel.Size = UDim2.new(1, 0, 0, 15)
-    distLabel.Position = UDim2.new(0, 0, 1, 0)
-    distLabel.BackgroundTransparency = 1
-    distLabel.TextColor3 = Color3.fromRGB(255,255,255)
-    distLabel.TextStrokeTransparency = 0
-    distLabel.Font = Enum.Font.SourceSans
-    distLabel.TextSize = 12
-    distLabel.Text = ""
-    distLabel.Parent = espGui
-    distLabel.Visible = false
-
-    local invLabel = Instance.new("TextLabel")
-    invLabel.Name = "Inventory"
-    invLabel.Size = UDim2.new(1, 0, 0, 20)
-    invLabel.Position = UDim2.new(1, 5, 0, 0)
-    invLabel.BackgroundTransparency = 1
-    invLabel.TextColor3 = Color3.fromRGB(0,255,0)
-    invLabel.TextStrokeTransparency = 0
-    invLabel.Font = Enum.Font.SourceSansItalic
-    invLabel.TextSize = 12
-    invLabel.Text = ""
-    invLabel.Parent = espGui
-    invLabel.Visible = false
-
-    local healthBarBG = Instance.new("Frame")
-    healthBarBG.Name = "HealthBarBG"
-    healthBarBG.Size = UDim2.new(0, 5, 1, 0)
-    healthBarBG.Position = UDim2.new(-0.1, 0, 0, 0)
-    healthBarBG.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    healthBarBG.BorderSizePixel = 0
-    healthBarBG.Parent = espGui
-    healthBarBG.Visible = false
-
-    local healthBar = Instance.new("Frame")
-    healthBar.Name = "HealthBar"
-    healthBar.Size = UDim2.new(1, 0, 1, 0)
-    healthBar.Position = UDim2.new(0, 0, 0, 0)
-    healthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-    healthBar.BorderSizePixel = 0
-    healthBar.Parent = healthBarBG
-
-    return espGui
-end
-
--- === FUNÇÃO QUE ATUALIZA O GUI ESP ===
-local function UpdateESPGui(plr, gui)
-    if not (plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")) then 
-        gui.Enabled = false 
-        return 
-    end
-
-    local hrp = plr.Character.HumanoidRootPart
-    local hum = plr.Character:FindFirstChildOfClass("Humanoid")
-
-    gui.Adornee = hrp
-    gui.Enabled = ESPSettings.Enabled
-
-    gui.Box.Visible = ESPSettings.Boxes
-    gui.Name.Visible = ESPSettings.Names
-    gui.Distance.Visible = ESPSettings.Distances
-    gui.Inventory.Visible = ESPSettings.Inventory
-    gui.HealthBarBG.Visible = ESPSettings.HealthBar
-
-    if ESPSettings.Highlights and ESPSettings.Boxes then
-        gui.Box.BorderColor3 = Color3.fromRGB(255, 215, 0)
-    else
-        gui.Box.BorderColor3 = Color3.new(0,0,0)
-    end
-
-    if ESPSettings.Names then
-        gui.Name.Text = plr.Name
-    end
-
-    if ESPSettings.Distances then
-        local dist = math.floor((Cam.CFrame.Position - hrp.Position).Magnitude)
-        gui.Distance.Text = dist .. "m"
-    end
-
-    if ESPSettings.Inventory then
-        local bp = plr:FindFirstChild("Backpack")
-        if bp then
-            local invItems = {}
-            for _, item in pairs(bp:GetChildren()) do
-                table.insert(invItems, item.Name)
-            end
-            gui.Inventory.Text = table.concat(invItems, ", ")
-        else
-            gui.Inventory.Text = "Sem Inventário"
-        end
-    end
-
-    if ESPSettings.HealthBar and hum then
-        local hpPercent = hum.Health / hum.MaxHealth
-        hpPercent = math.clamp(hpPercent, 0, 1)
-        gui.HealthBar.Size = UDim2.new(1, 0, hpPercent, 0)
-
-        if hpPercent > 0.75 then
-            gui.HealthBar.BackgroundColor3 = Color3.fromRGB(0,255,0)
-        elseif hpPercent > 0.5 then
-            gui.HealthBar.BackgroundColor3 = Color3.fromRGB(255,255,0)
-        else
-            gui.HealthBar.BackgroundColor3 = Color3.fromRGB(255,0,0)
-        end
-    end
-end
-
--- === LOOP DE ATUALIZAÇÃO ===
-RunS.RenderStepped:Connect(function()
-    if not ESPSettings.Enabled then
-        for plr, gui in pairs(ESPGuis) do
-            if gui then gui.Enabled = false end
-        end
-        return
-    end
-
-    for _, plr in pairs(Plrs:GetPlayers()) do
-        if plr ~= LP and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-            if not ESPGuis[plr] then
-                ESPGuis[plr] = CreateESPGui(plr)
-                if ESPGuis[plr] then ESPGuis[plr].Parent = Cam end
-            end
-            if ESPGuis[plr] then
-                UpdateESPGui(plr, ESPGuis[plr])
-            end
-        elseif ESPGuis[plr] then
-            ESPGuis[plr].Enabled = false
-        end
-    end
-end)
-
--- === LIMPAR QUANDO UM PLAYER SAI ===
-Plrs.PlayerRemoving:Connect(function(plr)
-    if ESPGuis[plr] then
-        ESPGuis[plr]:Destroy()
-        ESPGuis[plr] = nil
-    end
-end)
-
--- === RAYFIELD UI ===
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local Window = Rayfield:CreateWindow({
-   Name = "TortuguitaHub V3 🐢",
-   Icon = 10893912572, -- ID da tartaruga (logo)
-   LoadingTitle = "TortuguitaHub",
-   LoadingSubtitle = "Ultimate testing suite",
-   ShowText = "TortuguitaHub 🐢",
-   Theme = "Dark", -- Você pode trocar depois pelos temas do Rayfield
-
-   ToggleUIKeybind = "K",
-
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "TortuguitaHubConfigs",
-      FileName = "UserSettings"
-   },
-
-   Discord = {
-      Enabled = false,
-      Invite = "",
-      RememberJoins = true
-   },
-
-   KeySystem = false
-})
-
-local ESPTab = Window:CreateTab("ESP", 4483362458)
-
-ESPTab:CreateToggle({
-    Name = "Ativar ESP",
-    CurrentValue = false,
-    Flag = "ESPEnabled",
-    Callback = function(value)
-        ESPSettings.Enabled = value
-    end
-})
-
-ESPTab:CreateToggle({
-    Name = "Mostrar Boxes",
-    CurrentValue = false,
-    Flag = "ESPBoxes",
-    Callback = function(value)
-        ESPSettings.Boxes = value
-    end
-})
-
-ESPTab:CreateToggle({
-    Name = "Highlight (Borda Dourada)",
-    CurrentValue = false,
-    Flag = "ESPHighlights",
-    Callback = function(value)
-        ESPSettings.Highlights = value
-    end
-})
-
-ESPTab:CreateToggle({
-    Name = "Mostrar Nomes",
-    CurrentValue = false,
-    Flag = "ESPNomes",
-    Callback = function(value)
-        ESPSettings.Names = value
-    end
-})
-
-ESPTab:CreateToggle({
-    Name = "Mostrar Distância",
-    CurrentValue = false,
-    Flag = "ESPDistancia",
-    Callback = function(value)
-        ESPSettings.Distances = value
-    end
-})
-
-ESPTab:CreateToggle({
-    Name = "Mostrar Inventário",
-    CurrentValue = false,
-    Flag = "ESPInventory",
-    Callback = function(value)
-        ESPSettings.Inventory = value
-    end
-})
-
-ESPTab:CreateToggle({
-    Name = "Mostrar HealthBar",
-    CurrentValue = false,
-    Flag = "ESPHealthBar",
-    Callback = function(value)
-        ESPSettings.HealthBar = value
-    end
-})
-
---==[ Aimbot e Silent Aim ]==--
-
-local AimbotConfig = {
-    Enabled = false,
-    TeamCheck = true,
-    FOV = 100,
-    Smoothness = 5,
-    TargetPart = "Head" -- cabeça por padrão
-}
-
-local SilentAimConfig = {
-    Enabled = false,
-    TeamCheck = true,
-    TargetPart = "Head",
-    HitChance = 75 -- % de chance de acertar
-}
-
-local function GetClosestTarget(config)
-    local closestPlayer = nil
-    local shortestDist = math.huge
-    local mousePos = Vector2.new(Mouse.X, Mouse.Y)
-
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LP and plr.Character and plr.Character:FindFirstChild(config.TargetPart) and plr.Character:FindFirstChild("Humanoid") then
-            local hum = plr.Character.Humanoid
-            if hum.Health > 0 then
-                if config.TeamCheck and plr.Team == LP.Team then
-                    continue
-                end
-
-                local partPos, onScreen = Cam:WorldToViewportPoint(plr.Character[config.TargetPart].Position)
-                if onScreen then
-                    local screenPos = Vector2.new(partPos.X, partPos.Y)
-                    local dist = (screenPos - mousePos).Magnitude
-                    if dist < config.FOV and dist < shortestDist then
-                        shortestDist = dist
-                        closestPlayer = plr
-                    end
-                end
-            end
-        end
-    end
-    return closestPlayer
-end
-
---==[ Aimbot ]==--
-
-RunS.RenderStepped:Connect(function()
-    if AimbotConfig.Enabled and Mouse.Button2Down then
-        local target = GetClosestTarget(AimbotConfig)
-        if target and target.Character and target.Character:FindFirstChild(AimbotConfig.TargetPart) then
-            local targetPos = target.Character[AimbotConfig.TargetPart].Position
-            local cameraPos = Cam.CFrame.Position
-            local direction = (targetPos - cameraPos).Unit
-            local currentCFrame = Cam.CFrame
-            local desiredCFrame = CFrame.new(cameraPos, targetPos)
-            -- Interpola suavemente (smooth) para o alvo
-            Cam.CFrame = currentCFrame:Lerp(desiredCFrame, AimbotConfig.Smoothness / 100)
-        end
-    end
-end)
-
---==[ Silent Aim Hook ]==--
-
--- Esta parte depende do jogo, vou fazer um hook básico simulando silent aim no "Hit" de armas que usam Raycasting
-
-local oldRaycast = workspace.Raycast or workspace.RaycastAsync -- depende da versão, cuidado
-
-local function SilentAimRaycast(origin, direction, ...)
-    if SilentAimConfig.Enabled then
-        local target = GetClosestTarget(SilentAimConfig)
-        if target and target.Character and target.Character:FindFirstChild(SilentAimConfig.TargetPart) then
-            -- Chance de acertar
-            if math.random(1, 100) <= SilentAimConfig.HitChance then
-                local targetPos = target.Character[SilentAimConfig.TargetPart].Position
-                local newDirection = (targetPos - origin).Unit * direction.Magnitude
-                return oldRaycast(workspace, origin, newDirection, ...)
-            end
-        end
-    end
-    return oldRaycast(workspace, origin, direction, ...)
-end
-
--- Hook a função Raycast (apenas exemplo, pode variar por jogo)
-
-workspace.Raycast = SilentAimRaycast
-
---==[ UI Rayfield ]==--
-
-local AimbotTab = Window:CreateTab("Aimbot", 4483362458) -- Icon ID exemplo
-local SilentAimTab = Window:CreateTab("Silent Aim", 4483362458)
-
--- Aimbot UI
-AimbotTab:CreateToggle({
-    Name = "Ativar Aimbot",
-    CurrentValue = false,
-    Flag = "Aimbot_Enable",
-    Callback = function(val)
-        AimbotConfig.Enabled = val
-    end
-})
-
-AimbotTab:CreateToggle({
-    Name = "Team Check",
-    CurrentValue = true,
-    Flag = "Aimbot_TeamCheck",
-    Callback = function(val)
-        AimbotConfig.TeamCheck = val
-    end
-})
-
-AimbotTab:CreateSlider({
-    Name = "FOV",
-    Min = 10,
-    Max = 300,
-    Increment = 1,
-    Suffix = " px",
-    CurrentValue = AimbotConfig.FOV,
-    Flag = "Aimbot_FOV",
-    Callback = function(val)
-        AimbotConfig.FOV = val
-    end
-})
-
-AimbotTab:CreateSlider({
-    Name = "Smoothness",
-    Min = 1,
-    Max = 30,
-    Increment = 1,
-    Suffix = "%",
-    CurrentValue = AimbotConfig.Smoothness,
-    Flag = "Aimbot_Smoothness",
-    Callback = function(val)
-        AimbotConfig.Smoothness = val
-    end
-})
-
-AimbotTab:CreateDropdown({
-    Name = "Target Part",
-    Options = {"Head", "Torso", "HumanoidRootPart"},
-    CurrentOption = "Head",
-    Flag = "Aimbot_TargetPart",
-    Callback = function(val)
-        AimbotConfig.TargetPart = val
-    end
-})
-
--- Silent Aim UI
-SilentAimTab:CreateToggle({
-    Name = "Ativar Silent Aim",
-    CurrentValue = false,
-    Flag = "SilentAim_Enable",
-    Callback = function(val)
-        SilentAimConfig.Enabled = val
-    end
-})
-
-SilentAimTab:CreateToggle({
-    Name = "Team Check",
-    CurrentValue = true,
-    Flag = "SilentAim_TeamCheck",
-    Callback = function(val)
-        SilentAimConfig.TeamCheck = val
-    end
-})
-
-SilentAimTab:CreateSlider({
-    Name = "Hit Chance",
-    Min = 1,
-    Max = 100,
-    Increment = 1,
-    Suffix = "%",
-    CurrentValue = SilentAimConfig.HitChance,
-    Flag = "SilentAim_HitChance",
-    Callback = function(val)
-        SilentAimConfig.HitChance = val
-    end
-})
-
-SilentAimTab:CreateDropdown({
-    Name = "Target Part",
-    Options = {"Head", "Torso", "HumanoidRootPart"},
-    CurrentOption = "Head",
-    Flag = "SilentAim_TargetPart",
-    Callback = function(val)
-        SilentAimConfig.TargetPart = val
-    end
-})
-
-local UtilsTab = Window:CreateTab("Utilitários", 4483362458)
-
--- Auto Heal Toggle
-local AutoHealToggle = UtilsTab:CreateToggle({
-    Name = "Auto Heal",
-    CurrentValue = false,
-    Flag = "AutoHeal",
-    Callback = function(state)
-        if state then
-            AutoHealLoop = RunService.Heartbeat:Connect(function()
-                local humanoid = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-                if humanoid and humanoid.Health < humanoid.MaxHealth then
-                    humanoid.Health = math.min(humanoid.Health + 1, humanoid.MaxHealth)
-                end
-            end)
-        else
-            if AutoHealLoop then AutoHealLoop:Disconnect() AutoHealLoop = nil end
-        end
-    end,
-})
-
--- Auto Respawn Toggle
-local AutoRespawnToggle = UtilsTab:CreateToggle({
-    Name = "Auto Respawn",
-    CurrentValue = false,
-    Flag = "AutoRespawn",
-    Callback = function(state)
-        if state then
-            AutoRespawnLoop = RunService.Heartbeat:Connect(function()
-                local humanoid = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
-                if not humanoid or humanoid.Health <= 0 then
-                    wait(3)
-                    if PlayersService and PlayersService.LocalPlayer then
-                        PlayersService.LocalPlayer:LoadCharacter()
-                    end
-                end
-            end)
-        else
-            if AutoRespawnLoop then AutoRespawnLoop:Disconnect() AutoRespawnLoop = nil end
-        end
-    end,
-})
-
--- Inventory Viewer Toggle
-local InventoryToggle = UtilsTab:CreateToggle({
-    Name = "Inventory Viewer",
-    CurrentValue = false,
-    Flag = "InventoryViewer",
-    Callback = function(state)
-        if state then
-            print("Inventário do player:")
-            local backpack = LP:FindFirstChildOfClass("Backpack")
-            if backpack then
-                for _, item in pairs(backpack:GetChildren()) do
-                    print(item.Name)
-                end
-            else
-                print("Backpack não encontrado.")
-            end
-        else
-            print("Inventory Viewer desativado.")
-        end
-    end,
-})
-
--- Global ESP Toggle
-local GlobalESPToggle = UtilsTab:CreateToggle({
-    Name = "ESP Geral",
-    CurrentValue = false,
-    Flag = "GlobalESP",
-    Callback = function(state)
-        if state then
-            print("ESP ativado")
-            -- Conecte aqui seu loop de ESP
-        else
-            print("ESP desativado")
-            -- Desconecte e limpe ESP
-        end
-    end,
-})
-
--- FPS Boost Toggle (desliga sombras, efeitos para mais FPS)
-local FPSBoostToggle = UtilsTab:CreateToggle({
-    Name = "FPS Boost",
-    CurrentValue = false,
-    Flag = "FPSBoost",
-    Callback = function(state)
-        if state then
-            -- Exemplo simples
-            workspace.CurrentCamera.RenderingEnabled = false
-            for _, v in pairs(LP.PlayerGui:GetChildren()) do
-                if v:IsA("ScreenGui") then
-                    v.Enabled = false
-                end
-            end
-            print("FPS Boost ativado")
-        else
-            workspace.CurrentCamera.RenderingEnabled = true
-            for _, v in pairs(LP.PlayerGui:GetChildren()) do
-                if v:IsA("ScreenGui") then
-                    v.Enabled = true
-                end
-            end
-            print("FPS Boost desativado")
-        end
-    end,
-})
-
--- Anti AFK Toggle (impede que você seja desconectado por inatividade)
-local AntiAFKToggle = UtilsTab:CreateToggle({
-    Name = "Anti AFK",
-    CurrentValue = false,
-    Flag = "AntiAFK",
-    Callback = function(state)
-        if state then
-            if not AntiAFKConnection then
-                AntiAFKConnection = LP.Idled:Connect(function()
-                    local vu = game:GetService("VirtualUser")
-                    vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                    wait(1)
-                    vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                end)
-            end
-            print("Anti AFK ativado")
-        else
-            if AntiAFKConnection then
-                AntiAFKConnection:Disconnect()
-                AntiAFKConnection = nil
-            end
-            print("Anti AFK desativado")
-        end
-    end,
-})
-
--- Misc Dropdown (Extras variados)
-local MiscDropdown = UtilsTab:CreateDropdown({
-    Name = "Outros Utilitários",
-    Options = {"Nenhum", "Modo Invisível", "Modo God", "Modo Speed"},
-    CurrentOption = "Nenhum",
-    Flag = "MiscOptions",
-    Callback = function(option)
-        if option == "Modo Invisível" then
-            print("Ativando Modo Invisível")
-            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                LP.Character.HumanoidRootPart.Transparency = 1
-                for _, part in pairs(LP.Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.Transparency = 1
-                    end
-                end
-            end
-        elseif option == "Modo God" then
-            print("Ativando God Mode")
-            if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
-                LP.Character:FindFirstChildOfClass("Humanoid").MaxHealth = math.huge
-                LP.Character:FindFirstChildOfClass("Humanoid").Health = math.huge
-            end
-        elseif option == "Modo Speed" then
-            print("Ativando Speed Mode")
-            if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
-                LP.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 50
-            end
-        else
-            print("Nenhum utilitário selecionado")
-            if LP.Character and LP.Character:FindFirstChildOfClass("Humanoid") then
-                local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-                hum.MaxHealth = 100
-                hum.Health = 100
-                hum.WalkSpeed = 16
-                if LP.Character:FindFirstChild("HumanoidRootPart") then
-                    for _, part in pairs(LP.Character:GetChildren()) do
-                        if part:IsA("BasePart") then
-                            part.Transparency = 0
-                        end
-                    end
-                end
-            end
-        end
-    end,
-})
-
--- Themes personalizados para Rayfield
 local Themes = {
     ["Tortuguita"] = {
-        MainColor = Color3.fromRGB(0, 170, 127),       -- Verde tortuga
-        Background = Color3.fromRGB(20, 20, 20),       -- Fundo escuro
-        Accent = Color3.fromRGB(0, 255, 191),           -- Destaque brilhante
-        LightContrast = Color3.fromRGB(30, 30, 30),    -- Contraste leve
-        DarkContrast = Color3.fromRGB(10, 10, 10),     -- Contraste escuro
-        TextColor = Color3.fromRGB(230, 230, 230),     -- Texto claro
+        MainColor = Color3.fromRGB(0, 170, 127),
+        Background = Color3.fromRGB(20, 20, 20),
+        Accent = Color3.fromRGB(0, 255, 191),
+        LightContrast = Color3.fromRGB(30, 30, 30),
+        DarkContrast = Color3.fromRGB(10, 10, 10),
+        TextColor = Color3.fromRGB(230, 230, 230),
         Font = Enum.Font.GothamBold,
         TextSize = 15,
     },
-
     ["Cyberpunk"] = {
-        MainColor = Color3.fromRGB(255, 20, 147),      -- Rosa vibrante
-        Background = Color3.fromRGB(15, 15, 15),       -- Fundo bem escuro
-        Accent = Color3.fromRGB(0, 255, 255),          -- Azul neon
+        MainColor = Color3.fromRGB(255, 20, 147),
+        Background = Color3.fromRGB(15, 15, 15),
+        Accent = Color3.fromRGB(0, 255, 255),
         LightContrast = Color3.fromRGB(40, 40, 40),
         DarkContrast = Color3.fromRGB(5, 5, 5),
         TextColor = Color3.fromRGB(255, 255, 255),
         Font = Enum.Font.GothamSemibold,
         TextSize = 14,
     },
-
     ["DarkMode"] = {
         MainColor = Color3.fromRGB(70, 70, 70),
         Background = Color3.fromRGB(0, 0, 0),
@@ -691,35 +33,784 @@ local Themes = {
     }
 }
 
--- Exemplo de uso na criação da janela Rayfield:
 local Window = Rayfield:CreateWindow({
     Name = "TortuguitaHub V3",
-    Icon = 2157234102, -- ID da tartaruga que você quiser
+    Icon = 2157234102, -- seu ID de tartaruga
     LoadingTitle = "TortuguitaHub V3",
     LoadingSubtitle = "by Tortuguita",
     ShowText = "Tortuguita",
-    Theme = Themes["Tortuguita"],  -- Aqui escolhe o tema
+    Theme = Themes["Tortuguita"],
     ToggleUIKeybind = "K",
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "TortuguitaHubConfigs",
         FileName = "ConfigV3"
     },
-    Discord = {
-        Enabled = false,
-        Invite = "noinvitelink",
-        RememberJoins = true
-    },
+    Discord = { Enabled = false },
     KeySystem = false,
 })
 
--- Você pode criar um dropdown para trocar o tema em tempo real, por exemplo:
-local themeDropdown = Window:CreateTab("Configurações", 4483362458):CreateDropdown({
+-- Aba Configurações para escolher tema
+local ConfigTab = Window:CreateTab("Configurações", 4483362458)
+ConfigTab:CreateDropdown({
     Name = "Escolha o tema",
     Options = {"Tortuguita", "Cyberpunk", "DarkMode"},
     CurrentOption = "Tortuguita",
-    Flag = "ThemeSelector",
     Callback = function(selectedTheme)
         Window:UpdateTheme(Themes[selectedTheme])
+    end,
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local ESPTab = Window:CreateTab("ESP", 4483362458)
+
+-- Configurações ESP
+local espEnabled = false
+local espBox = true
+local espHealthBar = true
+local espName = true
+local espDistance = 200
+local espHighlight = true
+local espInventory = true
+
+-- Criando toggles e sliders na aba ESP
+
+ESPTab:CreateToggle({
+    Name = "Ativar ESP",
+    CurrentValue = false,
+    Flag = "ESPEnabled",
+    Callback = function(value)
+        espEnabled = value
+    end,
+})
+
+ESPTab:CreateToggle({
+    Name = "Mostrar Caixa",
+    CurrentValue = true,
+    Flag = "ESPBox",
+    Callback = function(value)
+        espBox = value
+    end,
+})
+
+ESPTab:CreateToggle({
+    Name = "Mostrar Barra de Vida",
+    CurrentValue = true,
+    Flag = "ESPHealthBar",
+    Callback = function(value)
+        espHealthBar = value
+    end,
+})
+
+ESPTab:CreateToggle({
+    Name = "Mostrar Nome",
+    CurrentValue = true,
+    Flag = "ESPName",
+    Callback = function(value)
+        espName = value
+    end,
+})
+
+ESPTab:CreateSlider({
+    Name = "Distância Máxima",
+    Min = 50,
+    Max = 1000,
+    Increment = 10,
+    Suffix = " studs",
+    CurrentValue = 200,
+    Flag = "ESPDist",
+    Callback = function(value)
+        espDistance = value
+    end,
+})
+
+ESPTab:CreateToggle({
+    Name = "Highlight",
+    CurrentValue = true,
+    Flag = "ESPHighlight",
+    Callback = function(value)
+        espHighlight = value
+    end,
+})
+
+ESPTab:CreateToggle({
+    Name = "Mostrar Inventário",
+    CurrentValue = true,
+    Flag = "ESPInventory",
+    Callback = function(value)
+        espInventory = value
+    end,
+})
+
+-- Função para criar ESP para um jogador
+local function createESPForPlayer(player)
+    if player == LocalPlayer then return end
+
+    local espObjects = {}
+
+    local function onCharacterAdded(character)
+        local humanoid = character:WaitForChild("Humanoid", 5)
+        local head = character:WaitForChild("Head", 5)
+        if not humanoid or not head then return end
+
+        -- Create Drawing objects
+        local box = Drawing.new("Square")
+        box.Visible = false
+        box.Color = Color3.new(1, 1, 1)
+        box.Thickness = 2
+        box.Filled = false
+
+        local healthBar = Drawing.new("Line")
+        healthBar.Visible = false
+        healthBar.Color = Color3.new(0, 1, 0)
+        healthBar.Thickness = 3
+
+        local nameText = Drawing.new("Text")
+        nameText.Visible = false
+        nameText.Text = player.Name
+        nameText.Color = Color3.new(1, 1, 1)
+        nameText.Size = 16
+        nameText.Center = true
+        nameText.Outline = true
+
+        local highlight = Drawing.new("Square")
+        highlight.Visible = false
+        highlight.Color = Color3.fromRGB(0, 255, 255)
+        highlight.Thickness = 2
+        highlight.Filled = false
+
+        local inventoryText = Drawing.new("Text")
+        inventoryText.Visible = false
+        inventoryText.Text = ""
+        inventoryText.Color = Color3.new(1, 1, 1)
+        inventoryText.Size = 14
+        inventoryText.Center = true
+        inventoryText.Outline = true
+
+        espObjects = {box = box, healthBar = healthBar, nameText = nameText, highlight = highlight, inventoryText = inventoryText}
+
+        RunService:BindToRenderStep(player.Name .. "_ESP", 301, function()
+            if not espEnabled then
+                for _, obj in pairs(espObjects) do
+                    obj.Visible = false
+                end
+                return
+            end
+            if not character or not character.Parent then
+                for _, obj in pairs(espObjects) do
+                    obj.Visible = false
+                end
+                RunService:UnbindFromRenderStep(player.Name .. "_ESP")
+                return
+            end
+
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if not rootPart then
+                for _, obj in pairs(espObjects) do
+                    obj.Visible = false
+                end
+                return
+            end
+
+            local dist = (rootPart.Position - Camera.CFrame.Position).Magnitude
+            if dist > espDistance then
+                for _, obj in pairs(espObjects) do
+                    obj.Visible = false
+                end
+                return
+            end
+
+            local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+            if not onScreen then
+                for _, obj in pairs(espObjects) do
+                    obj.Visible = false
+                end
+                return
+            end
+
+            -- Box
+            if espBox then
+                local size = Vector2.new(50, 100)
+                box.Size = size
+                box.Position = Vector2.new(rootPos.X - size.X/2, rootPos.Y - size.Y/2)
+                box.Visible = true
+            else
+                box.Visible = false
+            end
+
+            -- Health Bar vertical ao lado da box
+            if espHealthBar then
+                local humanoid = character:FindFirstChild("Humanoid")
+                if humanoid then
+                    local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+                    local barHeight = 100 * healthPercent
+                    healthBar.From = Vector2.new(box.Position.X - 6, box.Position.Y + 100)
+                    healthBar.To = Vector2.new(box.Position.X - 6, box.Position.Y + 100 - barHeight)
+                    healthBar.Color = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
+                    healthBar.Visible = true
+                else
+                    healthBar.Visible = false
+                end
+            else
+                healthBar.Visible = false
+            end
+
+            -- Nome
+            if espName then
+                nameText.Position = Vector2.new(rootPos.X, box.Position.Y - 18)
+                nameText.Text = player.Name
+                nameText.Visible = true
+            else
+                nameText.Visible = false
+            end
+
+            -- Highlight
+            if espHighlight then
+                highlight.Size = box.Size + Vector2.new(4, 4)
+                highlight.Position = box.Position - Vector2.new(2, 2)
+                highlight.Visible = true
+            else
+                highlight.Visible = false
+            end
+
+            -- Inventory (mostra texto simplificado do inventário do jogador)
+            if espInventory then
+                local backpack = player:FindFirstChild("Backpack")
+                local inventoryString = ""
+                if backpack then
+                    for _, item in pairs(backpack:GetChildren()) do
+                        inventoryString = inventoryString .. item.Name .. ", "
+                    end
+                end
+                if inventoryString ~= "" then
+                    inventoryString = inventoryString:sub(1, -3)
+                    inventoryText.Text = "Inv: " .. inventoryString
+                    inventoryText.Position = Vector2.new(rootPos.X, box.Position.Y + 110)
+                    inventoryText.Visible = true
+                else
+                    inventoryText.Visible = false
+                end
+            else
+                inventoryText.Visible = false
+            end
+        end)
+    end
+
+    player.CharacterAdded:Connect(onCharacterAdded)
+    if player.Character then
+        onCharacterAdded(player.Character)
+    end
+end
+
+-- Aplica ESP em todos os jogadores, atualiza ao entrar/ sair
+for _, player in pairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        createESPForPlayer(player)
+    end
+end
+
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        createESPForPlayer(player)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    RunService:UnbindFromRenderStep(player.Name .. "_ESP")
+end)
+
+local AimbotTab = Window:CreateTab("Aimbot", 4483362458)
+local SilentAimTab = Window:CreateTab("Silent Aim", 4483362458)
+
+-- Variáveis Aimbot
+local aimbotEnabled = false
+local aimbotFov = 50
+local aimbotAimPart = "Head"
+local aimbotSmoothness = 5
+
+-- Variáveis Silent Aim
+local silentAimEnabled = false
+local silentAimFov = 70
+local silentAimAimPart = "Head"
+
+-- UI - Aimbot
+AimbotTab:CreateToggle({
+    Name = "Ativar Aimbot",
+    CurrentValue = false,
+    Flag = "AimbotEnabled",
+    Callback = function(value)
+        aimbotEnabled = value
+    end,
+})
+
+AimbotTab:CreateSlider({
+    Name = "FOV",
+    Min = 10,
+    Max = 200,
+    Increment = 1,
+    Suffix = "°",
+    CurrentValue = 50,
+    Flag = "AimbotFov",
+    Callback = function(value)
+        aimbotFov = value
+    end,
+})
+
+AimbotTab:CreateDropdown({
+    Name = "Parte do Corpo",
+    Options = {"Head", "Torso"},
+    CurrentOption = "Head",
+    Flag = "AimbotAimPart",
+    Callback = function(option)
+        aimbotAimPart = option
+    end,
+})
+
+AimbotTab:CreateSlider({
+    Name = "Smoothness",
+    Min = 1,
+    Max = 20,
+    Increment = 1,
+    CurrentValue = 5,
+    Flag = "AimbotSmooth",
+    Callback = function(value)
+        aimbotSmoothness = value
+    end,
+})
+
+-- UI - Silent Aim
+SilentAimTab:CreateToggle({
+    Name = "Ativar Silent Aim",
+    CurrentValue = false,
+    Flag = "SilentAimEnabled",
+    Callback = function(value)
+        silentAimEnabled = value
+    end,
+})
+
+SilentAimTab:CreateSlider({
+    Name = "FOV",
+    Min = 10,
+    Max = 200,
+    Increment = 1,
+    Suffix = "°",
+    CurrentValue = 70,
+    Flag = "SilentAimFov",
+    Callback = function(value)
+        silentAimFov = value
+    end,
+})
+
+SilentAimTab:CreateDropdown({
+    Name = "Parte do Corpo",
+    Options = {"Head", "Torso"},
+    CurrentOption = "Head",
+    Flag = "SilentAimAimPart",
+    Callback = function(option)
+        silentAimAimPart = option
+    end,
+})
+
+-- Função auxiliar para encontrar o alvo dentro do FOV e distância
+local function getClosestTarget(fov, aimPartName)
+    local target = nil
+    local closestDist = math.huge
+    local mousePos = game.Players.LocalPlayer:GetMouse().Hit.Position
+    local camera = workspace.CurrentCamera
+    local screenCenter = Vector2.new(camera.ViewportSize.X/2, camera.ViewportSize.Y/2)
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(aimPartName) then
+            local part = player.Character[aimPartName]
+            local screenPos, onScreen = camera:WorldToViewportPoint(part.Position)
+            if onScreen then
+                local pos2d = Vector2.new(screenPos.X, screenPos.Y)
+                local dist = (pos2d - screenCenter).Magnitude
+                if dist < fov and dist < closestDist then
+                    target = player
+                    closestDist = dist
+                end
+            end
+        end
+    end
+    return target
+end
+
+-- Aimbot Loop
+RunService:BindToRenderStep("Aimbot", 301, function()
+    if aimbotEnabled then
+        local target = getClosestTarget(aimbotFov, aimbotAimPart)
+        if target and target.Character and target.Character:FindFirstChild(aimbotAimPart) then
+            local camera = workspace.CurrentCamera
+            local targetPos = target.Character[aimbotAimPart].Position
+            local cameraCFrame = camera.CFrame
+            local direction = (targetPos - cameraCFrame.Position).Unit
+            local targetCFrame = CFrame.new(cameraCFrame.Position, cameraCFrame.Position + direction)
+            -- Smooth lerp para mirar
+            camera.CFrame = cameraCFrame:Lerp(targetCFrame, 1 / aimbotSmoothness)
+        end
+    end
+end)
+
+-- Silent Aim Hook
+local mt = getrawmetatable(game)
+local oldIndex = mt.__index
+setreadonly(mt, false)
+
+mt.__index = newcclosure(function(self, key)
+    if silentAimEnabled and self == workspace.CurrentCamera and key == "CFrame" then
+        local target = getClosestTarget(silentAimFov, silentAimAimPart)
+        if target and target.Character and target.Character:FindFirstChild(silentAimAimPart) then
+            return CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Character[silentAimAimPart].Position)
+        end
+    end
+    return oldIndex(self, key)
+end)
+
+setreadonly(mt, true)
+
+local MovementTab = Window:CreateTab("Movimento", 4483362458)
+
+-- Variáveis de movimento
+local noclipEnabled = false
+local speedEnabled = false
+local speedValue = 16
+local jumpBoostEnabled = false
+local jumpPowerValue = 50
+local flyEnabled = false
+local flySpeed = 50
+
+-- Noclip toggle
+MovementTab:CreateToggle({
+    Name = "Ativar Noclip",
+    CurrentValue = false,
+    Flag = "NoclipToggle",
+    Callback = function(value)
+        noclipEnabled = value
+        if noclipEnabled then
+            noclipLoop = RunService.Stepped:Connect(function()
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end)
+        else
+            if noclipLoop then
+                noclipLoop:Disconnect()
+                noclipLoop = nil
+            end
+            -- Restaurar colisão
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end,
+})
+
+-- Speed toggle + slider
+MovementTab:CreateToggle({
+    Name = "Ativar Speed",
+    CurrentValue = false,
+    Flag = "SpeedToggle",
+    Callback = function(value)
+        speedEnabled = value
+        if not speedEnabled then
+            LocalPlayer.Character.Humanoid.WalkSpeed = 16 -- padrão
+        end
+    end,
+})
+
+MovementTab:CreateSlider({
+    Name = "Velocidade (WalkSpeed)",
+    Min = 16,
+    Max = 150,
+    Increment = 1,
+    CurrentValue = 16,
+    Flag = "SpeedValue",
+    Callback = function(value)
+        speedValue = value
+        if speedEnabled then
+            LocalPlayer.Character.Humanoid.WalkSpeed = speedValue
+        end
+    end,
+})
+
+-- Jump Boost toggle + slider
+MovementTab:CreateToggle({
+    Name = "Ativar Jump Boost",
+    CurrentValue = false,
+    Flag = "JumpBoostToggle",
+    Callback = function(value)
+        jumpBoostEnabled = value
+        if not jumpBoostEnabled then
+            LocalPlayer.Character.Humanoid.JumpPower = 50 -- padrão
+        end
+    end,
+})
+
+MovementTab:CreateSlider({
+    Name = "Jump Power",
+    Min = 50,
+    Max = 250,
+    Increment = 1,
+    CurrentValue = 50,
+    Flag = "JumpPowerValue",
+    Callback = function(value)
+        jumpPowerValue = value
+        if jumpBoostEnabled then
+            LocalPlayer.Character.Humanoid.JumpPower = jumpPowerValue
+        end
+    end,
+})
+
+-- Fly toggle + speed slider
+MovementTab:CreateToggle({
+    Name = "Ativar Fly",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Callback = function(value)
+        flyEnabled = value
+        if flyEnabled then
+            startFly()
+        else
+            stopFly()
+        end
+    end,
+})
+
+MovementTab:CreateSlider({
+    Name = "Fly Speed",
+    Min = 10,
+    Max = 200,
+    Increment = 1,
+    CurrentValue = 50,
+    Flag = "FlySpeedValue",
+    Callback = function(value)
+        flySpeed = value
+        if flyEnabled and flyBodyVelocity then
+            flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+            flySpeed = value
+        end
+    end,
+})
+
+-- Fly functions
+local flyBodyVelocity
+local flyLoop
+
+function startFly()
+    local character = LocalPlayer.Character
+    if not character then return end
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoidRootPart then return end
+
+    flyBodyVelocity = Instance.new("BodyVelocity")
+    flyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    flyBodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    flyBodyVelocity.Parent = humanoidRootPart
+
+    flyLoop = RunService.Heartbeat:Connect(function()
+        local camera = workspace.CurrentCamera
+        local direction = Vector3.new(0, 0, 0)
+
+        local userInput = game:GetService("UserInputService")
+        if userInput:IsKeyDown(Enum.KeyCode.W) then
+            direction = direction + camera.CFrame.LookVector
+        end
+        if userInput:IsKeyDown(Enum.KeyCode.S) then
+            direction = direction - camera.CFrame.LookVector
+        end
+        if userInput:IsKeyDown(Enum.KeyCode.A) then
+            direction = direction - camera.CFrame.RightVector
+        end
+        if userInput:IsKeyDown(Enum.KeyCode.D) then
+            direction = direction + camera.CFrame.RightVector
+        end
+        if userInput:IsKeyDown(Enum.KeyCode.Space) then
+            direction = direction + Vector3.new(0, 1, 0)
+        end
+        if userInput:IsKeyDown(Enum.KeyCode.LeftControl) then
+            direction = direction - Vector3.new(0, 1, 0)
+        end
+
+        flyBodyVelocity.Velocity = direction.Unit * flySpeed
+    end)
+end
+
+function stopFly()
+    if flyLoop then
+        flyLoop:Disconnect()
+        flyLoop = nil
+    end
+    if flyBodyVelocity then
+        flyBodyVelocity:Destroy()
+        flyBodyVelocity = nil
+    end
+end
+
+local UtilityTab = Window:CreateTab("Utilitários", 4483362458)
+
+-- Variables
+local antiAfkEnabled = false
+local fpsBoostEnabled = false
+local fpsCapValue = 60
+
+-- Anti-AFK toggle
+UtilityTab:CreateToggle({
+    Name = "Anti-AFK",
+    CurrentValue = false,
+    Flag = "AntiAfkToggle",
+    Callback = function(value)
+        antiAfkEnabled = value
+        if antiAfkEnabled then
+            local vu = game:GetService("VirtualUser")
+            antiAfkConnection = game:GetService("Players").LocalPlayer.Idled:Connect(function()
+                vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+                wait(1)
+                vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            end)
+        else
+            if antiAfkConnection then
+                antiAfkConnection:Disconnect()
+                antiAfkConnection = nil
+            end
+        end
+    end,
+})
+
+-- FPS Boost toggle + slider
+UtilityTab:CreateToggle({
+    Name = "FPS Boost",
+    CurrentValue = false,
+    Flag = "FPSBoostToggle",
+    Callback = function(value)
+        fpsBoostEnabled = value
+        if fpsBoostEnabled then
+            setFPSCap(fpsCapValue)
+        else
+            setFPSCap(0) -- remove cap
+        end
+    end,
+})
+
+UtilityTab:CreateSlider({
+    Name = "FPS Cap",
+    Min = 30,
+    Max = 144,
+    Increment = 1,
+    CurrentValue = 60,
+    Flag = "FPSCapSlider",
+    Callback = function(value)
+        fpsCapValue = value
+        if fpsBoostEnabled then
+            setFPSCap(fpsCapValue)
+        end
+    end,
+})
+
+-- Função para limitar FPS (simples workaround)
+function setFPSCap(fps)
+    if fps > 0 then
+        game:GetService("RunService").RenderStepped:Connect(function()
+            wait(1/fps)
+        end)
+    else
+        -- Desativa o limite de FPS (não faz nada)
+    end
+end
+
+-- Teleport to player dropdown
+local playersList = {}
+for _, plr in pairs(game.Players:GetPlayers()) do
+    if plr ~= game.Players.LocalPlayer then
+        table.insert(playersList, plr.Name)
+    end
+end
+
+local teleportTo = nil
+
+UtilityTab:CreateDropdown({
+    Name = "Teleportar para jogador",
+    Options = playersList,
+    Flag = "TeleportDropdown",
+    Callback = function(value)
+        teleportTo = value
+    end,
+})
+
+UtilityTab:CreateButton({
+    Name = "Teleportar",
+    Callback = function()
+        if teleportTo then
+            local target = game.Players:FindFirstChild(teleportTo)
+            if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = target.Character.HumanoidRootPart
+                local lp = game.Players.LocalPlayer
+                if lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+                    lp.Character.HumanoidRootPart.CFrame = hrp.CFrame + Vector3.new(0, 5, 0)
+                end
+            end
+        end
+    end,
+})
+
+-- Rejoin button
+UtilityTab:CreateButton({
+    Name = "Reentrar no servidor",
+    Callback = function()
+        local TeleportService = game:GetService("TeleportService")
+        local PlaceID = game.PlaceId
+        local Player = game.Players.LocalPlayer
+        TeleportService:Teleport(PlaceID, Player)
+    end,
+})
+
+-- Server hop button (troca para servidor diferente)
+UtilityTab:CreateButton({
+    Name = "Trocar de servidor",
+    Callback = function()
+        local HttpService = game:GetService("HttpService")
+        local TeleportService = game:GetService("TeleportService")
+        local PlaceID = game.PlaceId
+
+        local servers = {}
+        local cursor = ""
+
+        repeat
+            local response = game:HttpGetAsync("https://games.roblox.com/v1/games/"..PlaceID.."/servers/Public?sortOrder=Asc&limit=100&cursor="..cursor)
+            local data = HttpService:JSONDecode(response)
+            for _, server in pairs(data.data) do
+                if server.playing < server.maxPlayers then
+                    table.insert(servers, server.id)
+                end
+            end
+            cursor = data.nextPageCursor
+        until not cursor
+
+        if #servers > 0 then
+            local randomServer = servers[math.random(1,#servers)]
+            TeleportService:TeleportToPlaceInstance(PlaceID, randomServer, game.Players.LocalPlayer)
+        else
+            warn("Nenhum servidor disponível para troca.")
+        end
+    end,
+})
+
+-- Clear console button
+UtilityTab:CreateButton({
+    Name = "Limpar Console",
+    Callback = function()
+        if syn and syn.queue_on_teleport then
+            syn.queue_on_teleport('print("Console limpo")')
+        else
+            print("Limpar console não suportado neste executor.")
+        end
     end,
 })

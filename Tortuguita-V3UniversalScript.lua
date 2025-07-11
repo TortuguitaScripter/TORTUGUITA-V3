@@ -1,66 +1,65 @@
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/Rayfield"))()
-
-local Themes = {
-    ["Tortuguita"] = {
-        MainColor = Color3.fromRGB(0, 170, 127),
-        Background = Color3.fromRGB(20, 20, 20),
-        Accent = Color3.fromRGB(0, 255, 191),
-        LightContrast = Color3.fromRGB(30, 30, 30),
-        DarkContrast = Color3.fromRGB(10, 10, 10),
-        TextColor = Color3.fromRGB(230, 230, 230),
-        Font = Enum.Font.GothamBold,
-        TextSize = 15,
-    },
-    ["Cyberpunk"] = {
-        MainColor = Color3.fromRGB(255, 20, 147),
-        Background = Color3.fromRGB(15, 15, 15),
-        Accent = Color3.fromRGB(0, 255, 255),
-        LightContrast = Color3.fromRGB(40, 40, 40),
-        DarkContrast = Color3.fromRGB(5, 5, 5),
-        TextColor = Color3.fromRGB(255, 255, 255),
-        Font = Enum.Font.GothamSemibold,
-        TextSize = 14,
-    },
-    ["DarkMode"] = {
-        MainColor = Color3.fromRGB(70, 70, 70),
-        Background = Color3.fromRGB(0, 0, 0),
-        Accent = Color3.fromRGB(100, 100, 100),
-        LightContrast = Color3.fromRGB(40, 40, 40),
-        DarkContrast = Color3.fromRGB(20, 20, 20),
-        TextColor = Color3.fromRGB(200, 200, 200),
-        Font = Enum.Font.SourceSansBold,
-        TextSize = 14,
-    }
-}
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-    Name = "TortuguitaHub V3",
-    Icon = 2157234102, -- seu ID de tartaruga
-    LoadingTitle = "TortuguitaHub V3",
-    LoadingSubtitle = "by Tortuguita",
-    ShowText = "Tortuguita",
-    Theme = Themes["Tortuguita"],
-    ToggleUIKeybind = "K",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "TortuguitaHubConfigs",
-        FileName = "ConfigV3"
-    },
-    Discord = { Enabled = false },
-    KeySystem = false,
+   Name = "TortuguitaHub V3",
+   Icon = 14047754281,  -- Exemplo: ID do ícone da tartaruga que você queria
+   LoadingTitle = "TortuguitaHub V3",
+   LoadingSubtitle = "by Tortuguita",
+   ShowText = "Tortuguita",
+   Theme = "Default",
+   ToggleUIKeybind = "K",
+
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false,
+
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "TortuguitaHub",
+      FileName = "Config"
+   },
+
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+
+   KeySystem = false,  -- Coloque true se quiser ativar key system
+   KeySettings = {
+      Title = "TortuguitaHub Key",
+      Subtitle = "Enter your key",
+      Note = "No key method provided",
+      FileName = "Key",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {"Hello"}  -- keys aceitas
+   }
 })
 
--- Aba Configurações para escolher tema
-local ConfigTab = Window:CreateTab("Configurações", 4483362458)
-ConfigTab:CreateDropdown({
-    Name = "Escolha o tema",
-    Options = {"Tortuguita", "Cyberpunk", "DarkMode"},
-    CurrentOption = "Tortuguita",
-    Callback = function(selectedTheme)
-        Window:UpdateTheme(Themes[selectedTheme])
-    end,
+-- Criar uma aba de exemplo para testar
+local MainTab = Window:CreateTab("Main")
+
+local ToggleExample = MainTab:CreateToggle({
+    Name = "Toggle Teste",
+    CurrentValue = false,
+    Flag = "ToggleTest",
+    Callback = function(value)
+        print("Toggle mudou para: ", value)
+    end
 })
 
+Rayfield:Notify({
+   Title = "Sucesso!",
+   Content = "Janela inicializada corretamente.",
+   Duration = 5,
+   Image = 14047754281,
+   Actions = {
+       Ignore = {
+           Name = "OK",
+           Callback = function() print("Notificação ignorada.") end
+       },
+   },
+})
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer

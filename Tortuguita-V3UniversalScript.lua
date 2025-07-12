@@ -4,7 +4,7 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 -- Configuração da janela
 local Window = Rayfield:CreateWindow({
    Name = "TortuguitaHub V3",
-   Icon = 12725806138, 
+   Icon = "rbxassetid://12725806138", 
    LoadingTitle = "TortuguitaHub V3 🐢",
    LoadingSubtitle = "by TortuguitaXP_ofc",
    ShowText = "TortugaHub 🐢",
@@ -181,278 +181,111 @@ UtilTab:CreateInput({
 	end,
 })
 
-local TabESP = Window:CreateTab("ESP Universal", 4483362458)
+-- Biblioteca ESP base
+local ESP = loadstring(game:HttpGet("https://raw.githubusercontent.com/zzerexx/scripts/main/esp.lua"))()
+ESP.Enabled = false
+ESP.TeamCheck = false -- Desative se quiser ver inimigos apenas
+ESP.Boxes = true
+ESP.Names = true
+ESP.Tracers = false
+ESP.Distance = false
+ESP.Health = false
+ESP.Color = Color3.fromRGB(0, 170, 255)
+ESP.Thickness = 2
+ESP.Range = math.huge
 
--- ==== Section: Controle Geral ====
-local SectionGeneral = TabESP:CreateSection("Controle Geral")
+-- UI - Aba ESP com sections
+local Tab = Window:CreateTab("📦 ESP", 4483362458)
 
-local espEnabled = false
-local espBoxesEnabled = true
-local espNamesEnabled = true
-local espDistanceEnabled = true
+local SectionMain = Tab:CreateSection("🎯 ESP Principal")
 
-SectionGeneral:CreateToggle({
+Tab:CreateToggle({
     Name = "Ativar ESP",
     CurrentValue = false,
-    Callback = function(val)
-        espEnabled = val
-        if not espEnabled then
-            -- Remove tudo
-            for _, player in pairs(game.Players:GetPlayers()) do
-                if player.Character then
-                    local head = player.Character:FindFirstChild("Head")
-                    if head then
-                        local espFolder = head:FindFirstChild("ESPFolder")
-                        if espFolder then
-                            espFolder:Destroy()
-                        end
-                    end
-                end
-            end
-        end
-    end
+    Callback = function(Value)
+        ESP.Enabled = Value
+    end,
 })
 
-SectionGeneral:CreateToggle({
-    Name = "Mostrar Boxes",
+Tab:CreateToggle({
+    Name = "Caixas (Boxes)",
     CurrentValue = true,
-    Callback = function(val) espBoxesEnabled = val end
+    Callback = function(Value)
+        ESP.Boxes = Value
+    end,
 })
 
-SectionGeneral:CreateToggle({
-    Name = "Mostrar Nome",
+Tab:CreateToggle({
+    Name = "Nomes dos Players",
     CurrentValue = true,
-    Callback = function(val) espNamesEnabled = val end
+    Callback = function(Value)
+        ESP.Names = Value
+    end,
 })
 
-SectionGeneral:CreateToggle({
+Tab:CreateToggle({
+    Name = "Tracers (Linhas)",
+    CurrentValue = false,
+    Callback = function(Value)
+        ESP.Tracers = Value
+    end,
+})
+
+Tab:CreateToggle({
     Name = "Mostrar Distância",
-    CurrentValue = true,
-    Callback = function(val) espDistanceEnabled = val end
+    CurrentValue = false,
+    Callback = function(Value)
+        ESP.Distance = Value
+    end,
 })
 
--- ==== Section: Aparência ====
-local SectionVisuals = TabESP:CreateSection("Aparência")
-
-local boxColor = Color3.fromRGB(0, 255, 0)
-local nameColor = Color3.fromRGB(255, 255, 255)
-local distanceColor = Color3.fromRGB(255, 255, 0)
-local transparency = 0.4
-local boxThickness = 1
-
-SectionVisuals:CreateColorPicker({
-    Name = "Cor das Boxes",
-    Color = boxColor,
-    Callback = function(color) boxColor = color end
+Tab:CreateToggle({
+    Name = "Health Bar",
+    CurrentValue = false,
+    Callback = function(Value)
+        ESP.Health = Value
+    end,
 })
 
-SectionVisuals:CreateColorPicker({
-    Name = "Cor dos Nomes",
-    Color = nameColor,
-    Callback = function(color) nameColor = color end
+local SectionVisual = Tab:CreateSection("🎨 Visual")
+
+Tab:CreateColorPicker({
+    Name = "Cor do ESP",
+    Color = Color3.fromRGB(0, 170, 255),
+    Callback = function(Value)
+        ESP.Color = Value
+    end,
 })
 
-SectionVisuals:CreateColorPicker({
-    Name = "Cor da Distância",
-    Color = distanceColor,
-    Callback = function(color) distanceColor = color end
-})
-
-SectionVisuals:CreateSlider({
-    Name = "Transparência das Boxes",
-    Range = {0, 1},
-    Increment = 0.05,
-    CurrentValue = transparency,
-    Callback = function(val) transparency = val end
-})
-
-SectionVisuals:CreateSlider({
-    Name = "Espessura das Boxes",
+Tab:CreateSlider({
+    Name = "Espessura (Thickness)",
     Range = {1, 5},
     Increment = 1,
-    CurrentValue = boxThickness,
-    Callback = function(val) boxThickness = val end
+    CurrentValue = 2,
+    Callback = function(Value)
+        ESP.Thickness = Value
+    end,
 })
 
--- ==== Section: Configurações Avançadas ====
-local SectionAdvanced = TabESP:CreateSection("Configurações Avançadas")
-
-local updateRate = 0.1 -- segundos entre atualizações do ESP
-
-SectionAdvanced:CreateSlider({
-    Name = "Taxa de Atualização (segundos)",
-    Range = {0.05, 1},
-    Increment = 0.05,
-    CurrentValue = updateRate,
-    Callback = function(val) updateRate = val end
+Tab:CreateSlider({
+    Name = "Alcance Máximo (Range)",
+    Range = {100, 3000},
+    Increment = 50,
+    CurrentValue = 3000,
+    Callback = function(Value)
+        ESP.Range = Value
+    end,
 })
 
--- Função para criar ESP para cada player
-local function CreateESPForPlayer(player)
-    if not player.Character then return end
-    local head = player.Character:FindFirstChild("Head")
-    if not head then return end
+local SectionFilters = Tab:CreateSection("⚙️ Filtros")
 
-    local espFolder = head:FindFirstChild("ESPFolder")
-    if espFolder then espFolder:Destroy() end
-
-    espFolder = Instance.new("Folder")
-    espFolder.Name = "ESPFolder"
-    espFolder.Parent = head
-
-    -- Box (BoxHandleAdornment)
-    local box = Instance.new("BoxHandleAdornment")
-    box.Name = "Box"
-    box.Adornee = head
-    box.Size = Vector3.new(2, 5, 1)
-    box.Color3 = boxColor
-    box.AlwaysOnTop = true
-    box.Transparency = transparency
-    box.ZIndex = 5
-    box.Parent = espFolder
-
-    -- Nome (BillboardGui)
-    local nameBillboard = Instance.new("BillboardGui")
-    nameBillboard.Name = "NameTag"
-    nameBillboard.Adornee = head
-    nameBillboard.AlwaysOnTop = true
-    nameBillboard.Size = UDim2.new(0, 100, 0, 30)
-    nameBillboard.StudsOffset = Vector3.new(0, 2.5, 0)
-    nameBillboard.Parent = espFolder
-
-    local nameLabel = Instance.new("TextLabel")
-    nameLabel.Name = "NameLabel"
-    nameLabel.BackgroundTransparency = 1
-    nameLabel.TextColor3 = nameColor
-    nameLabel.TextStrokeTransparency = 0.5
-    nameLabel.Font = Enum.Font.SourceSansBold
-    nameLabel.TextSize = 18
-    nameLabel.Text = player.Name
-    nameLabel.Size = UDim2.new(1, 0, 1, 0)
-    nameLabel.Parent = nameBillboard
-
-    -- Distância (BillboardGui)
-    local distBillboard = Instance.new("BillboardGui")
-    distBillboard.Name = "DistanceTag"
-    distBillboard.Adornee = head
-    distBillboard.AlwaysOnTop = true
-    distBillboard.Size = UDim2.new(0, 100, 0, 20)
-    distBillboard.StudsOffset = Vector3.new(0, 1.5, 0)
-    distBillboard.Parent = espFolder
-
-    local distLabel = Instance.new("TextLabel")
-    distLabel.Name = "DistLabel"
-    distLabel.BackgroundTransparency = 1
-    distLabel.TextColor3 = distanceColor
-    distLabel.TextStrokeTransparency = 0.5
-    distLabel.Font = Enum.Font.SourceSans
-    distLabel.TextSize = 14
-    distLabel.Text = ""
-    distLabel.Parent = distBillboard
-end
-
--- Atualiza as propriedades visuais dos ESPs
-local function UpdateESPVisuals(player)
-    if not player.Character then return end
-    local head = player.Character:FindFirstChild("Head")
-    if not head then return end
-    local espFolder = head:FindFirstChild("ESPFolder")
-    if not espFolder then return end
-
-    local box = espFolder:FindFirstChild("Box")
-    local nameBillboard = espFolder:FindFirstChild("NameTag")
-    local distBillboard = espFolder:FindFirstChild("DistanceTag")
-
-    if box then
-        box.Color3 = boxColor
-        box.Transparency = transparency
-        box.Adornee = head
-        box.Size = Vector3.new(2, 5, 1)
-        box.ZIndex = 5
-        box.AlwaysOnTop = true
-        box.LineThickness = boxThickness -- OBS: BoxHandleAdornment não tem LineThickness, mas deixei para ideia visual
-    end
-
-    if nameBillboard and nameBillboard:FindFirstChild("NameLabel") then
-        nameBillboard.NameLabel.TextColor3 = nameColor
-        nameBillboard.Adornee = head
-        nameBillboard.StudsOffset = Vector3.new(0, 2.5, 0)
-    end
-
-    if distBillboard and distBillboard:FindFirstChild("DistLabel") then
-        distBillboard.DistLabel.TextColor3 = distanceColor
-        distBillboard.Adornee = head
-        distBillboard.StudsOffset = Vector3.new(0, 1.5, 0)
-    end
-end
-
--- Atualiza o texto da distância
-local function UpdateDistance(player)
-    if not player.Character then return end
-    local head = player.Character:FindFirstChild("Head")
-    if not head then return end
-    local espFolder = head:FindFirstChild("ESPFolder")
-    if not espFolder then return end
-    local distBillboard = espFolder:FindFirstChild("DistanceTag")
-    if not distBillboard or not distBillboard:FindFirstChild("DistLabel") then return end
-
-    local localChar = game.Players.LocalPlayer.Character
-    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return end
-
-    local distance = (localChar.HumanoidRootPart.Position - head.Position).Magnitude
-    distBillboard.DistLabel.Text = string.format("Dist: %.1f", distance)
-end
-
--- Atualiza visibilidade dos elementos
-local function UpdateVisibility(player)
-    if not player.Character then return end
-    local head = player.Character:FindFirstChild("Head")
-    if not head then return end
-    local espFolder = head:FindFirstChild("ESPFolder")
-    if not espFolder then return end
-
-    local box = espFolder:FindFirstChild("Box")
-    local nameBillboard = espFolder:FindFirstChild("NameTag")
-    local distBillboard = espFolder:FindFirstChild("DistanceTag")
-
-    if box then box.Visible = espBoxesEnabled and espEnabled end
-    if nameBillboard then nameBillboard.Enabled = espNamesEnabled and espEnabled end
-    if distBillboard then distBillboard.Enabled = espDistanceEnabled and espEnabled end
-end
-
--- Main ESP update loop
-spawn(function()
-    while true do
-        if espEnabled then
-            for _, player in pairs(game.Players:GetPlayers()) do
-                if player ~= game.Players.LocalPlayer then
-                    if player.Character and player.Character:FindFirstChild("Head") then
-                        if not player.Character.Head:FindFirstChild("ESPFolder") then
-                            CreateESPForPlayer(player)
-                        else
-                            UpdateESPVisuals(player)
-                        end
-                        UpdateDistance(player)
-                        UpdateVisibility(player)
-                    end
-                end
-            end
-        end
-        wait(updateRate)
-    end
-end)
-
--- Atualiza ESP para novos jogadores que entrarem
-game.Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function()
-        wait(1) -- espera carregar a character
-        if espEnabled and player ~= game.Players.LocalPlayer then
-            CreateESPForPlayer(player)
-        end
-    end)
-end)
-
-print("[ESP] Script ESP Universal carregado com sucesso")
+Tab:CreateToggle({
+    Name = "Team Check (só inimigos)",
+    CurrentValue = false,
+    Callback = function(Value)
+        ESP.TeamCheck = Value
+    end,
+})
 
 -- === Aba Movement Completa ===
 

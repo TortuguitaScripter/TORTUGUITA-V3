@@ -29,338 +29,376 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
--- Criação da aba ESP
-local ESPTab = Window:CreateTab("ESP", 4483362458) -- ID de ícone opcional
+local UtilTab = Window:CreateTab("⚙️ Utilitários", 13014530549)
 
--- Variáveis básicas
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local ESPEnabled = false
+-- 🌐 Sistema
+local sysSection = UtilTab:CreateSection("🌐 Sistema")
 
--- Função para desenhar ESP box
-local function CreateESP(player)
-    local Box = Drawing.new("Square")
-    Box.Visible = false
-    Box.Color = Color3.fromRGB(0, 255, 0)
-    Box.Thickness = 1
-    Box.Filled = false
+UtilTab:CreateButton({
+	Name = "Anti-AFK",
+	Callback = function()
+		local vu = game:GetService("VirtualUser")
+		game:GetService("Players").LocalPlayer.Idled:Connect(function()
+			vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+			wait(1)
+			vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+		end)
+	end,
+})
 
-    local Connection
-    Connection = RunService.RenderStepped:Connect(function()
-        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and ESPEnabled then
-            local root = player.Character.HumanoidRootPart
-            local pos, visible = Camera:WorldToViewportPoint(root.Position)
-            if visible then
-                local size = Vector2.new(50, 100) / (root.Position - Camera.CFrame.Position).Magnitude
-                Box.Size = size
-                Box.Position = Vector2.new(pos.X - size.X / 2, pos.Y - size.Y / 2)
-                Box.Visible = true
-            else
-                Box.Visible = false
-            end
-        else
-            Box.Visible = false
-        end
-    end)
+UtilTab:CreateToggle({
+	Name = "Boost de FPS",
+	CurrentValue = false,
+	Callback = function(v)
+		if v then
+			for _, obj in pairs(game:GetDescendants()) do
+				if obj:IsA("BasePart") then
+					obj.Material = Enum.Material.SmoothPlastic
+					obj.Reflectance = 0
+				elseif obj:IsA("Decal") or obj:IsA("Texture") then
+					obj.Transparency = 1
+				elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
+					obj.Enabled = false
+				end
+			end
+			setfpscap(120)
+		end
+	end,
+})
 
-    player.AncestryChanged:Connect(function()
-        if not player:IsDescendantOf(game) then
-            Connection:Disconnect()
-            Box:Remove()
-        end
-    end)
+-- 🧹 Limpeza
+local cleanSection = UtilTab:CreateSection("🧹 Limpeza & Lag")
+
+UtilTab:CreateButton({
+	Name = "Limpar Sons",
+	Callback = function()
+		for _, v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Sound") then
+				v:Destroy()
+			end
+		end
+	end,
+})
+
+UtilTab:CreateButton({
+	Name = "Desativar Partículas",
+	Callback = function()
+		for _, v in pairs(workspace:GetDescendants()) do
+			if v:IsA("ParticleEmitter") or v:IsA("Trail") then
+				v.Enabled = false
+			end
+		end
+	end,
+})
+
+UtilTab:CreateButton({
+	Name = "Remover Explosões",
+	Callback = function()
+		for _, obj in pairs(workspace:GetDescendants()) do
+			if obj:IsA("Explosion") then
+				obj:Destroy()
+			end
+		end
+	end,
+})
+
+-- 🔊 Áudio
+local audioSection = UtilTab:CreateSection("🔊 Áudio")
+
+UtilTab:CreateButton({
+	Name = "Mutar Música do Jogo",
+	Callback = function()
+		for _, v in pairs(workspace:GetDescendants()) do
+			if v:IsA("Sound") then
+				v.Volume = 0
+			end
+		end
+	end,
+})
+
+UtilTab:CreateToggle({
+	Name = "Mute global (automaticamente)",
+	CurrentValue = false,
+	Callback = function(v)
+		getgenv().mutando = v
+		while getgenv().mutando do
+			task.wait(1)
+			for _, s in pairs(workspace:GetDescendants()) do
+				if s:IsA("Sound") then
+					s.Volume = 0
+				end
+			end
+		end
+	end,
+})
+
+-- 👁️ Visual
+local visualSection = UtilTab:CreateSection("👁️ Visual")
+
+UtilTab:CreateButton({
+	Name = "Remover Nevoeiro",
+	Callback = function()
+		game:GetService("Lighting").FogEnd = 100000
+	end,
+})
+
+UtilTab:CreateButton({
+	Name = "Remover Pós Efeitos",
+	Callback = function()
+		for _, v in pairs(game:GetService("Lighting"):GetChildren()) do
+			if v:IsA("PostEffect") or v:IsA("BlurEffect") then
+				v:Destroy()
+			end
+		end
+	end,
+})
+
+-- 📡 Rede e Ping
+local netSection = UtilTab:CreateSection("📡 Rede & Ping")
+
+UtilTab:CreateButton({
+	Name = "Mostrar Ping",
+	Callback = function()
+		local Stats = game:GetService("Stats")
+		local Net = Stats:FindFirstChild("Network")
+		if Net then
+			print("Ping atual:", math.floor(Net:FindFirstChild("ServerStatsItem")["Data Ping"]:GetValue()))
+		else
+			warn("Não foi possível obter o ping.")
+		end
+	end,
+})
+
+-- 💻 Execução
+local execSection = UtilTab:CreateSection("💻 Execução")
+
+UtilTab:CreateInput({
+	Name = "Executar Script",
+	PlaceholderText = "Cole script para executar",
+	RemoveTextAfterFocusLost = false,
+	Callback = function(Value)
+		loadstring(Value)()
+	end,
+})
+
+local espTab = Window:CreateTab("🧿 ESP", 13014530549)
+
+-- 📌 ESP: Players
+local playerSection = espTab:CreateSection("👥 Jogadores")
+
+espTab:CreateToggle({
+	Name = "Ativar ESP de Jogadores",
+	CurrentValue = false,
+	Callback = function(v)
+		getgenv().espPlayersEnabled = v
+	end,
+})
+
+espTab:CreateDropdown({
+	Name = "Tipo de ESP",
+	Options = {"Box", "Tracers", "Name", "HealthBar"},
+	CurrentOption = "Box",
+	Callback = function(option)
+		getgenv().espMode = option
+	end,
+})
+
+espTab:CreateColorPicker({
+	Name = "Cor do ESP",
+	Color = Color3.fromRGB(0, 255, 0),
+	Callback = function(cor)
+		getgenv().espColor = cor
+	end,
+})
+
+espTab:CreateSlider({
+	Name = "Distância Máxima",
+	Range = {100, 2000},
+	Increment = 50,
+	CurrentValue = 1000,
+	Callback = function(valor)
+		getgenv().espMaxDistance = valor
+	end,
+})
+
+espTab:CreateToggle({
+	Name = "Mostrar apenas inimigos",
+	CurrentValue = false,
+	Callback = function(v)
+		getgenv().espEnemiesOnly = v
+	end,
+})
+
+-- 💾 ESP: Items
+local itemSection = espTab:CreateSection("📦 Itens e Loot")
+
+espTab:CreateToggle({
+	Name = "ESP de Itens",
+	CurrentValue = false,
+	Callback = function(v)
+		getgenv().espItems = v
+	end,
+})
+
+espTab:CreateDropdown({
+	Name = "Tipo de Itens",
+	Options = {"Armas", "Poções", "Todos"},
+	CurrentOption = "Todos",
+	Callback = function(op)
+		getgenv().itemFilter = op
+	end,
+})
+
+-- 🧟‍♂️ ESP: NPCs e Mobs
+local mobSection = espTab:CreateSection("🧟 NPCs / Mobs")
+
+espTab:CreateToggle({
+	Name = "ESP de NPCs/Mobs",
+	CurrentValue = false,
+	Callback = function(v)
+		getgenv().espMobs = v
+	end,
+})
+
+espTab:CreateDropdown({
+	Name = "Tipo de Mob",
+	Options = {"Todos", "Hostis", "Neutros"},
+	CurrentOption = "Todos",
+	Callback = function(tipo)
+		getgenv().mobFilter = tipo
+	end,
+})
+
+espTab:CreateColorPicker({
+	Name = "Cor dos NPCs",
+	Color = Color3.fromRGB(255, 0, 0),
+	Callback = function(cor)
+		getgenv().mobColor = cor
+	end,
+})
+
+-- 👁️ Ativação geral (loop)
+if not getgenv().espLoaded then
+	getgenv().espLoaded = true
+	getgenv().espLoop = task.spawn(function()
+		while task.wait(1) do
+			if getgenv().espPlayersEnabled then
+				for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
+					if plr ~= game.Players.LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+						local hrp = plr.Character.HumanoidRootPart
+						local dist = (hrp.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+						if dist <= (getgenv().espMaxDistance or 1000) then
+							if getgenv().espEnemiesOnly then
+								-- coloque aqui lógica de time, se existir
+							end
+							-- Aqui renderiza a ESP do tipo selecionado (Name, Box, etc)
+							-- Isso depende de Drawing API de seu executor ou lib específica (como chamando uma ESP externa)
+						end
+					end
+				end
+			end
+		end
+	end)
 end
 
--- Toggle no menu para ligar o ESP
-ESPTab:CreateToggle({
-    Name = "Ativar ESP",
-    CurrentValue = false,
-    Flag = "ESPEnabled",
-    Callback = function(Value)
-        ESPEnabled = Value
-        if Value then
-            for _, plr in pairs(Players:GetPlayers()) do
-                if plr ~= LocalPlayer then
-                    CreateESP(plr)
-                end
-            end
-            Players.PlayerAdded:Connect(function(plr)
-                if plr ~= LocalPlayer then
-                    CreateESP(plr)
-                end
-            end)
-        end
-    end
+local aimbotTab = Window:CreateTab("🎯 Aimbot", 13014530549)
+
+-- 📌 SECTION: Silent Aim
+aimbotTab:CreateSection("🤫 Silent Aim")
+
+aimbotTab:CreateToggle({
+	Name = "Ativar Silent Aim",
+	CurrentValue = false,
+	Callback = function(v)
+		getgenv().silentAim = v
+	end,
 })
 
-local ESPTab = Window:CreateTab("ESP 🔍", 4483362458)
-
--- 📌 SEÇÃO: Configurações Gerais
-ESPTab:CreateSection("⚙️ Configurações Gerais")
-
-local espEnabled = false
-local espDistance = 250
-local espColor = Color3.new(1, 1, 1)
-local espMode = "Box"
-
-ESPTab:CreateToggle({
-   Name = "Ativar ESP Global",
-   CurrentValue = false,
-   Callback = function(value)
-      espEnabled = value
-   end,
+aimbotTab:CreateDropdown({
+	Name = "Whitelist (Players que não serão atingidos)",
+	Options = {"Nenhum", "Amigo1", "Amigo2"},
+	CurrentOption = "Nenhum",
+	Callback = function(plr)
+		getgenv().aimWhitelist = plr
+	end,
 })
 
-ESPTab:CreateSlider({
-   Name = "Distância Máxima",
-   Range = {50, 1000},
-   Increment = 50,
-   Suffix = " studs",
-   CurrentValue = 250,
-   Callback = function(value)
-      espDistance = value
-   end,
+aimbotTab:CreateDropdown({
+	Name = "Parte do corpo para mirar (Silent)",
+	Options = {"Head", "Torso", "HumanoidRootPart"},
+	CurrentOption = "Head",
+	Callback = function(part)
+		getgenv().silentAimTargetPart = part
+	end,
 })
 
-ESPTab:CreateDropdown({
-   Name = "Modo de ESP",
-   Options = {"Box", "Tracers", "Name", "Health Bar"},
-   CurrentOption = "Box",
-   Callback = function(option)
-      espMode = option
-   end,
+-- 📌 SECTION: Aimbot (Legit)
+aimbotTab:CreateSection("🎯 Aimbot Tradicional")
+
+aimbotTab:CreateToggle({
+	Name = "Ativar Aimbot",
+	CurrentValue = false,
+	Callback = function(v)
+		getgenv().legitAimbot = v
+	end,
 })
 
--- 🧍 SEÇÃO: Jogadores
-ESPTab:CreateSection("🧍 Jogadores")
-
-ESPTab:CreateToggle({
-   Name = "ESP em Players",
-   CurrentValue = false,
-   Callback = function(state)
-      getgenv().ESPPlayers = state
-   end,
+aimbotTab:CreateKeybind({
+	Name = "Tecla para Ativar Mira",
+	CurrentKeybind = "Q",
+	Callback = function(k)
+		getgenv().aimKey = k
+	end,
 })
 
-ESPTab:CreateToggle({
-   Name = "Mostrar Nome",
-   CurrentValue = false,
-   Callback = function(state)
-      getgenv().ESPPlayerName = state
-   end,
+aimbotTab:CreateSlider({
+	Name = "FOV (Raio de mira)",
+	Range = {20, 300},
+	Increment = 5,
+	CurrentValue = 120,
+	Callback = function(v)
+		getgenv().aimFOV = v
+	end,
 })
 
-ESPTab:CreateToggle({
-   Name = "Mostrar Health",
-   CurrentValue = false,
-   Callback = function(state)
-      getgenv().ESPPlayerHealth = state
-   end,
+aimbotTab:CreateToggle({
+	Name = "Apenas quando visível",
+	CurrentValue = true,
+	Callback = function(v)
+		getgenv().aimVisibilityCheck = v
+	end,
 })
 
--- 🤖 SEÇÃO: NPCs e Mobs
-ESPTab:CreateSection("🤖 NPCs / Mobs")
-
-ESPTab:CreateToggle({
-   Name = "ESP em NPCs",
-   CurrentValue = false,
-   Callback = function(state)
-      getgenv().ESPNPCs = state
-   end,
+aimbotTab:CreateDropdown({
+	Name = "Parte do corpo para mirar (Aimbot)",
+	Options = {"Head", "Torso", "HumanoidRootPart"},
+	CurrentOption = "HumanoidRootPart",
+	Callback = function(part)
+		getgenv().aimPart = part
+	end,
 })
 
--- 🎒 SEÇÃO: Itens e Objetos
-ESPTab:CreateSection("🎒 Itens e Objetos")
-
-ESPTab:CreateToggle({
-   Name = "ESP em Itens Dropados",
-   CurrentValue = false,
-   Callback = function(state)
-      getgenv().ESPItems = state
-   end,
+aimbotTab:CreateToggle({
+	Name = "Mira Suave (Smooth)",
+	CurrentValue = true,
+	Callback = function(v)
+		getgenv().smoothAiming = v
+	end,
 })
 
-ESPTab:CreateToggle({
-   Name = "ESP em Baús / Containers",
-   CurrentValue = false,
-   Callback = function(state)
-      getgenv().ESPChests = state
-   end,
+aimbotTab:CreateSlider({
+	Name = "Velocidade da Mira Suave",
+	Range = {1, 20},
+	Increment = 1,
+	CurrentValue = 8,
+	Callback = function(v)
+		getgenv().smoothSpeed = v
+	end,
 })
-
--- 📦 SISTEMA DE RENDERIZAÇÃO (EXEMPLO FUNCIONAL SIMPLES)
-local function createESP(part, labelText)
-   if part:FindFirstChild("ESPBox") then return end
-
-   local box = Instance.new("BillboardGui", part)
-   box.Name = "ESPBox"
-   box.Size = UDim2.new(0, 100, 0, 40)
-   box.AlwaysOnTop = true
-   box.StudsOffset = Vector3.new(0, 2, 0)
-
-   local label = Instance.new("TextLabel", box)
-   label.Size = UDim2.new(1, 0, 1, 0)
-   label.BackgroundTransparency = 1
-   label.Text = labelText
-   label.TextColor3 = espColor
-   label.TextStrokeTransparency = 0
-end
-
-task.spawn(function()
-   while task.wait(1) do
-      if espEnabled then
-         for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
-            if plr ~= LocalPlayer and getgenv().ESPPlayers then
-               local char = plr.Character
-               if char and char:FindFirstChild("HumanoidRootPart") then
-                  local dist = (char.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                  if dist <= espDistance then
-                     createESP(char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart"), plr.Name)
-                  end
-               end
-            end
-         end
-      end
-   end
-end)
-
-local AimbotTab = Window:CreateTab("🎯 Aimbot", 6026569809)
-
-AimbotTab:CreateSection("⚙️ Configurações Gerais")
-
-local aimbotEnabled = false
-local aimbotSmoothness = 0.1
-local aimbotFOV = 100
-local aimbotPart = "Head"
-local aimbotDistance = 500
-local aimbotWhitelist = {}
-
-AimbotTab:CreateToggle({
-   Name = "Ativar Aimbot",
-   CurrentValue = false,
-   Callback = function(v)
-      aimbotEnabled = v
-   end,
-})
-
-AimbotTab:CreateDropdown({
-   Name = "Parte do Corpo",
-   Options = {"Head", "HumanoidRootPart", "Torso"},
-   CurrentOption = "Head",
-   Callback = function(opt)
-      aimbotPart = opt
-   end,
-})
-
-AimbotTab:CreateSlider({
-   Name = "FOV (Campo de Visão)",
-   Range = {20, 300},
-   Increment = 10,
-   Suffix = " px",
-   CurrentValue = 100,
-   Callback = function(v)
-      aimbotFOV = v
-   end,
-})
-
-AimbotTab:CreateSlider({
-   Name = "Suavidade",
-   Range = {0.01, 1},
-   Increment = 0.01,
-   Suffix = "",
-   CurrentValue = 0.1,
-   Callback = function(v)
-      aimbotSmoothness = v
-   end,
-})
-
-AimbotTab:CreateSlider({
-   Name = "Distância Máxima",
-   Range = {50, 2000},
-   Increment = 50,
-   Suffix = " studs",
-   CurrentValue = 500,
-   Callback = function(v)
-      aimbotDistance = v
-   end,
-})
-
-AimbotTab:CreateSection("🔒 Whitelist (Ignore jogadores)")
-
-AimbotTab:CreateInput({
-   Name = "Nome do Jogador para Whitelist",
-   PlaceholderText = "Digite o nome exato",
-   RemoveTextAfterFocusLost = true,
-   Callback = function(name)
-      table.insert(aimbotWhitelist, name)
-   end,
-})
-
--- 🎯 Função para encontrar alvo
-local function GetClosestTarget()
-   local players = game:GetService("Players")
-   local localPlayer = players.LocalPlayer
-   local character = localPlayer.Character
-   if not character or not character:FindFirstChild("HumanoidRootPart") then return end
-
-   local closest
-   local shortestDist = math.huge
-
-   for _, plr in ipairs(players:GetPlayers()) do
-      if plr ~= localPlayer and not table.find(aimbotWhitelist, plr.Name) then
-         local char = plr.Character
-         if char and char:FindFirstChild(aimbotPart) then
-            local part = char[aimbotPart]
-            local screenPos, onScreen = workspace.CurrentCamera:WorldToViewportPoint(part.Position)
-            local dist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
-            local mag = (part.Position - character.HumanoidRootPart.Position).Magnitude
-            if onScreen and dist < aimbotFOV and mag <= aimbotDistance then
-               if dist < shortestDist then
-                  shortestDist = dist
-                  closest = part
-               end
-            end
-         end
-      end
-   end
-   return closest
-end
-
--- 🧠 Aimbot Loop
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local camera = workspace.CurrentCamera
-local aiming = false
-
-UIS.InputBegan:Connect(function(input)
-   if input.UserInputType == Enum.UserInputType.MouseButton2 then
-      aiming = true
-   end
-end)
-
-UIS.InputEnded:Connect(function(input)
-   if input.UserInputType == Enum.UserInputType.MouseButton2 then
-      aiming = false
-   end
-end)
-
-RunService.RenderStepped:Connect(function()
-   if aimbotEnabled and aiming then
-      local target = GetClosestTarget()
-      if target then
-         local current = camera.CFrame.LookVector
-         local direction = (target.Position - camera.CFrame.Position).Unit
-         local smoothed = current:Lerp(direction, aimbotSmoothness)
-         camera.CFrame = CFrame.new(camera.CFrame.Position, camera.CFrame.Position + smoothed)
-      end
-   end
-end)
 
 -- === Aba Movement Completa ===
 
-local MovementTab = Window:CreateTab("🏃 Movement", 6026569809)
+local MovementTab = Window:CreateTab("🏃 Movement", nil)
 
 -- Variáveis internas para controle
 local walkspeed_enabled = false

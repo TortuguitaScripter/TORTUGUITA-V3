@@ -4,10 +4,10 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 -- Configuração da janela
 local Window = Rayfield:CreateWindow({
    Name = "TortuguitaHub V3",
-   Icon = 14047754281, -- ID de uma tartaruga no Roblox, pode mudar
-   LoadingTitle = "TortuguitaHub V3",
-   LoadingSubtitle = "Inicializando...",
-   ShowText = "Tortuguita",
+   Icon = 12725806138, 
+   LoadingTitle = "TortuguitaHub V3 🐢",
+   LoadingSubtitle = "by TortuguitaXP_ofc",
+   ShowText = "TortugaHub 🐢",
    Theme = "Default",
    ToggleUIKeybind = "K",
 
@@ -29,10 +29,10 @@ local Window = Rayfield:CreateWindow({
    KeySystem = false
 })
 
-local UtilTab = Window:CreateTab("⚙️ Utilitários", 13014530549)
+local UtilTab = Window:CreateTab("Utilities", 13014530549)
 
 -- 🌐 Sistema
-local sysSection = UtilTab:CreateSection("🌐 Sistema")
+local sysSection = UtilTab:CreateSection("🌐 System")
 
 UtilTab:CreateButton({
 	Name = "Anti-AFK",
@@ -47,7 +47,7 @@ UtilTab:CreateButton({
 })
 
 UtilTab:CreateToggle({
-	Name = "Boost de FPS",
+	Name = "Boost FPS",
 	CurrentValue = false,
 	Callback = function(v)
 		if v then
@@ -67,10 +67,10 @@ UtilTab:CreateToggle({
 })
 
 -- 🧹 Limpeza
-local cleanSection = UtilTab:CreateSection("🧹 Limpeza & Lag")
+local cleanSection = UtilTab:CreateSection("🧹 Cleaning & Lag")
 
 UtilTab:CreateButton({
-	Name = "Limpar Sons",
+	Name = "Clear Sounds",
 	Callback = function()
 		for _, v in pairs(workspace:GetDescendants()) do
 			if v:IsA("Sound") then
@@ -81,7 +81,7 @@ UtilTab:CreateButton({
 })
 
 UtilTab:CreateButton({
-	Name = "Desativar Partículas",
+	Name = "Disable Particles ",
 	Callback = function()
 		for _, v in pairs(workspace:GetDescendants()) do
 			if v:IsA("ParticleEmitter") or v:IsA("Trail") then
@@ -92,7 +92,7 @@ UtilTab:CreateButton({
 })
 
 UtilTab:CreateButton({
-	Name = "Remover Explosões",
+	Name = "Remove Explosions ",
 	Callback = function()
 		for _, obj in pairs(workspace:GetDescendants()) do
 			if obj:IsA("Explosion") then
@@ -103,10 +103,10 @@ UtilTab:CreateButton({
 })
 
 -- 🔊 Áudio
-local audioSection = UtilTab:CreateSection("🔊 Áudio")
+local audioSection = UtilTab:CreateSection("🔊 Sounds")
 
 UtilTab:CreateButton({
-	Name = "Mutar Música do Jogo",
+	Name = "Mute Game Music",
 	Callback = function()
 		for _, v in pairs(workspace:GetDescendants()) do
 			if v:IsA("Sound") then
@@ -117,7 +117,7 @@ UtilTab:CreateButton({
 })
 
 UtilTab:CreateToggle({
-	Name = "Mute global (automaticamente)",
+	Name = "Mute Globally (Automatically)",
 	CurrentValue = false,
 	Callback = function(v)
 		getgenv().mutando = v
@@ -181,220 +181,278 @@ UtilTab:CreateInput({
 	end,
 })
 
-local espTab = Window:CreateTab("🧿 ESP", 13014530549)
+local TabESP = Window:CreateTab("ESP Universal", 4483362458)
 
--- 📌 ESP: Players
-local playerSection = espTab:CreateSection("👥 Jogadores")
+-- ==== Section: Controle Geral ====
+local SectionGeneral = TabESP:CreateSection("Controle Geral")
 
-espTab:CreateToggle({
-	Name = "Ativar ESP de Jogadores",
-	CurrentValue = false,
-	Callback = function(v)
-		getgenv().espPlayersEnabled = v
-	end,
+local espEnabled = false
+local espBoxesEnabled = true
+local espNamesEnabled = true
+local espDistanceEnabled = true
+
+SectionGeneral:CreateToggle({
+    Name = "Ativar ESP",
+    CurrentValue = false,
+    Callback = function(val)
+        espEnabled = val
+        if not espEnabled then
+            -- Remove tudo
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player.Character then
+                    local head = player.Character:FindFirstChild("Head")
+                    if head then
+                        local espFolder = head:FindFirstChild("ESPFolder")
+                        if espFolder then
+                            espFolder:Destroy()
+                        end
+                    end
+                end
+            end
+        end
+    end
 })
 
-espTab:CreateDropdown({
-	Name = "Tipo de ESP",
-	Options = {"Box", "Tracers", "Name", "HealthBar"},
-	CurrentOption = "Box",
-	Callback = function(option)
-		getgenv().espMode = option
-	end,
+SectionGeneral:CreateToggle({
+    Name = "Mostrar Boxes",
+    CurrentValue = true,
+    Callback = function(val) espBoxesEnabled = val end
 })
 
-espTab:CreateColorPicker({
-	Name = "Cor do ESP",
-	Color = Color3.fromRGB(0, 255, 0),
-	Callback = function(cor)
-		getgenv().espColor = cor
-	end,
+SectionGeneral:CreateToggle({
+    Name = "Mostrar Nome",
+    CurrentValue = true,
+    Callback = function(val) espNamesEnabled = val end
 })
 
-espTab:CreateSlider({
-	Name = "Distância Máxima",
-	Range = {100, 2000},
-	Increment = 50,
-	CurrentValue = 1000,
-	Callback = function(valor)
-		getgenv().espMaxDistance = valor
-	end,
+SectionGeneral:CreateToggle({
+    Name = "Mostrar Distância",
+    CurrentValue = true,
+    Callback = function(val) espDistanceEnabled = val end
 })
 
-espTab:CreateToggle({
-	Name = "Mostrar apenas inimigos",
-	CurrentValue = false,
-	Callback = function(v)
-		getgenv().espEnemiesOnly = v
-	end,
+-- ==== Section: Aparência ====
+local SectionVisuals = TabESP:CreateSection("Aparência")
+
+local boxColor = Color3.fromRGB(0, 255, 0)
+local nameColor = Color3.fromRGB(255, 255, 255)
+local distanceColor = Color3.fromRGB(255, 255, 0)
+local transparency = 0.4
+local boxThickness = 1
+
+SectionVisuals:CreateColorPicker({
+    Name = "Cor das Boxes",
+    Color = boxColor,
+    Callback = function(color) boxColor = color end
 })
 
--- 💾 ESP: Items
-local itemSection = espTab:CreateSection("📦 Itens e Loot")
-
-espTab:CreateToggle({
-	Name = "ESP de Itens",
-	CurrentValue = false,
-	Callback = function(v)
-		getgenv().espItems = v
-	end,
+SectionVisuals:CreateColorPicker({
+    Name = "Cor dos Nomes",
+    Color = nameColor,
+    Callback = function(color) nameColor = color end
 })
 
-espTab:CreateDropdown({
-	Name = "Tipo de Itens",
-	Options = {"Armas", "Poções", "Todos"},
-	CurrentOption = "Todos",
-	Callback = function(op)
-		getgenv().itemFilter = op
-	end,
+SectionVisuals:CreateColorPicker({
+    Name = "Cor da Distância",
+    Color = distanceColor,
+    Callback = function(color) distanceColor = color end
 })
 
--- 🧟‍♂️ ESP: NPCs e Mobs
-local mobSection = espTab:CreateSection("🧟 NPCs / Mobs")
-
-espTab:CreateToggle({
-	Name = "ESP de NPCs/Mobs",
-	CurrentValue = false,
-	Callback = function(v)
-		getgenv().espMobs = v
-	end,
+SectionVisuals:CreateSlider({
+    Name = "Transparência das Boxes",
+    Range = {0, 1},
+    Increment = 0.05,
+    CurrentValue = transparency,
+    Callback = function(val) transparency = val end
 })
 
-espTab:CreateDropdown({
-	Name = "Tipo de Mob",
-	Options = {"Todos", "Hostis", "Neutros"},
-	CurrentOption = "Todos",
-	Callback = function(tipo)
-		getgenv().mobFilter = tipo
-	end,
+SectionVisuals:CreateSlider({
+    Name = "Espessura das Boxes",
+    Range = {1, 5},
+    Increment = 1,
+    CurrentValue = boxThickness,
+    Callback = function(val) boxThickness = val end
 })
 
-espTab:CreateColorPicker({
-	Name = "Cor dos NPCs",
-	Color = Color3.fromRGB(255, 0, 0),
-	Callback = function(cor)
-		getgenv().mobColor = cor
-	end,
+-- ==== Section: Configurações Avançadas ====
+local SectionAdvanced = TabESP:CreateSection("Configurações Avançadas")
+
+local updateRate = 0.1 -- segundos entre atualizações do ESP
+
+SectionAdvanced:CreateSlider({
+    Name = "Taxa de Atualização (segundos)",
+    Range = {0.05, 1},
+    Increment = 0.05,
+    CurrentValue = updateRate,
+    Callback = function(val) updateRate = val end
 })
 
--- 👁️ Ativação geral (loop)
-if not getgenv().espLoaded then
-	getgenv().espLoaded = true
-	getgenv().espLoop = task.spawn(function()
-		while task.wait(1) do
-			if getgenv().espPlayersEnabled then
-				for _, plr in pairs(game:GetService("Players"):GetPlayers()) do
-					if plr ~= game.Players.LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-						local hrp = plr.Character.HumanoidRootPart
-						local dist = (hrp.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-						if dist <= (getgenv().espMaxDistance or 1000) then
-							if getgenv().espEnemiesOnly then
-								-- coloque aqui lógica de time, se existir
-							end
-							-- Aqui renderiza a ESP do tipo selecionado (Name, Box, etc)
-							-- Isso depende de Drawing API de seu executor ou lib específica (como chamando uma ESP externa)
-						end
-					end
-				end
-			end
-		end
-	end)
+-- Função para criar ESP para cada player
+local function CreateESPForPlayer(player)
+    if not player.Character then return end
+    local head = player.Character:FindFirstChild("Head")
+    if not head then return end
+
+    local espFolder = head:FindFirstChild("ESPFolder")
+    if espFolder then espFolder:Destroy() end
+
+    espFolder = Instance.new("Folder")
+    espFolder.Name = "ESPFolder"
+    espFolder.Parent = head
+
+    -- Box (BoxHandleAdornment)
+    local box = Instance.new("BoxHandleAdornment")
+    box.Name = "Box"
+    box.Adornee = head
+    box.Size = Vector3.new(2, 5, 1)
+    box.Color3 = boxColor
+    box.AlwaysOnTop = true
+    box.Transparency = transparency
+    box.ZIndex = 5
+    box.Parent = espFolder
+
+    -- Nome (BillboardGui)
+    local nameBillboard = Instance.new("BillboardGui")
+    nameBillboard.Name = "NameTag"
+    nameBillboard.Adornee = head
+    nameBillboard.AlwaysOnTop = true
+    nameBillboard.Size = UDim2.new(0, 100, 0, 30)
+    nameBillboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    nameBillboard.Parent = espFolder
+
+    local nameLabel = Instance.new("TextLabel")
+    nameLabel.Name = "NameLabel"
+    nameLabel.BackgroundTransparency = 1
+    nameLabel.TextColor3 = nameColor
+    nameLabel.TextStrokeTransparency = 0.5
+    nameLabel.Font = Enum.Font.SourceSansBold
+    nameLabel.TextSize = 18
+    nameLabel.Text = player.Name
+    nameLabel.Size = UDim2.new(1, 0, 1, 0)
+    nameLabel.Parent = nameBillboard
+
+    -- Distância (BillboardGui)
+    local distBillboard = Instance.new("BillboardGui")
+    distBillboard.Name = "DistanceTag"
+    distBillboard.Adornee = head
+    distBillboard.AlwaysOnTop = true
+    distBillboard.Size = UDim2.new(0, 100, 0, 20)
+    distBillboard.StudsOffset = Vector3.new(0, 1.5, 0)
+    distBillboard.Parent = espFolder
+
+    local distLabel = Instance.new("TextLabel")
+    distLabel.Name = "DistLabel"
+    distLabel.BackgroundTransparency = 1
+    distLabel.TextColor3 = distanceColor
+    distLabel.TextStrokeTransparency = 0.5
+    distLabel.Font = Enum.Font.SourceSans
+    distLabel.TextSize = 14
+    distLabel.Text = ""
+    distLabel.Parent = distBillboard
 end
 
-local aimbotTab = Window:CreateTab("🎯 Aimbot", 13014530549)
+-- Atualiza as propriedades visuais dos ESPs
+local function UpdateESPVisuals(player)
+    if not player.Character then return end
+    local head = player.Character:FindFirstChild("Head")
+    if not head then return end
+    local espFolder = head:FindFirstChild("ESPFolder")
+    if not espFolder then return end
 
--- 📌 SECTION: Silent Aim
-aimbotTab:CreateSection("🤫 Silent Aim")
+    local box = espFolder:FindFirstChild("Box")
+    local nameBillboard = espFolder:FindFirstChild("NameTag")
+    local distBillboard = espFolder:FindFirstChild("DistanceTag")
 
-aimbotTab:CreateToggle({
-	Name = "Ativar Silent Aim",
-	CurrentValue = false,
-	Callback = function(v)
-		getgenv().silentAim = v
-	end,
-})
+    if box then
+        box.Color3 = boxColor
+        box.Transparency = transparency
+        box.Adornee = head
+        box.Size = Vector3.new(2, 5, 1)
+        box.ZIndex = 5
+        box.AlwaysOnTop = true
+        box.LineThickness = boxThickness -- OBS: BoxHandleAdornment não tem LineThickness, mas deixei para ideia visual
+    end
 
-aimbotTab:CreateDropdown({
-	Name = "Whitelist (Players que não serão atingidos)",
-	Options = {"Nenhum", "Amigo1", "Amigo2"},
-	CurrentOption = "Nenhum",
-	Callback = function(plr)
-		getgenv().aimWhitelist = plr
-	end,
-})
+    if nameBillboard and nameBillboard:FindFirstChild("NameLabel") then
+        nameBillboard.NameLabel.TextColor3 = nameColor
+        nameBillboard.Adornee = head
+        nameBillboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    end
 
-aimbotTab:CreateDropdown({
-	Name = "Parte do corpo para mirar (Silent)",
-	Options = {"Head", "Torso", "HumanoidRootPart"},
-	CurrentOption = "Head",
-	Callback = function(part)
-		getgenv().silentAimTargetPart = part
-	end,
-})
+    if distBillboard and distBillboard:FindFirstChild("DistLabel") then
+        distBillboard.DistLabel.TextColor3 = distanceColor
+        distBillboard.Adornee = head
+        distBillboard.StudsOffset = Vector3.new(0, 1.5, 0)
+    end
+end
 
--- 📌 SECTION: Aimbot (Legit)
-aimbotTab:CreateSection("🎯 Aimbot Tradicional")
+-- Atualiza o texto da distância
+local function UpdateDistance(player)
+    if not player.Character then return end
+    local head = player.Character:FindFirstChild("Head")
+    if not head then return end
+    local espFolder = head:FindFirstChild("ESPFolder")
+    if not espFolder then return end
+    local distBillboard = espFolder:FindFirstChild("DistanceTag")
+    if not distBillboard or not distBillboard:FindFirstChild("DistLabel") then return end
 
-aimbotTab:CreateToggle({
-	Name = "Ativar Aimbot",
-	CurrentValue = false,
-	Callback = function(v)
-		getgenv().legitAimbot = v
-	end,
-})
+    local localChar = game.Players.LocalPlayer.Character
+    if not localChar or not localChar:FindFirstChild("HumanoidRootPart") then return end
 
-aimbotTab:CreateKeybind({
-	Name = "Tecla para Ativar Mira",
-	CurrentKeybind = "Q",
-	Callback = function(k)
-		getgenv().aimKey = k
-	end,
-})
+    local distance = (localChar.HumanoidRootPart.Position - head.Position).Magnitude
+    distBillboard.DistLabel.Text = string.format("Dist: %.1f", distance)
+end
 
-aimbotTab:CreateSlider({
-	Name = "FOV (Raio de mira)",
-	Range = {20, 300},
-	Increment = 5,
-	CurrentValue = 120,
-	Callback = function(v)
-		getgenv().aimFOV = v
-	end,
-})
+-- Atualiza visibilidade dos elementos
+local function UpdateVisibility(player)
+    if not player.Character then return end
+    local head = player.Character:FindFirstChild("Head")
+    if not head then return end
+    local espFolder = head:FindFirstChild("ESPFolder")
+    if not espFolder then return end
 
-aimbotTab:CreateToggle({
-	Name = "Apenas quando visível",
-	CurrentValue = true,
-	Callback = function(v)
-		getgenv().aimVisibilityCheck = v
-	end,
-})
+    local box = espFolder:FindFirstChild("Box")
+    local nameBillboard = espFolder:FindFirstChild("NameTag")
+    local distBillboard = espFolder:FindFirstChild("DistanceTag")
 
-aimbotTab:CreateDropdown({
-	Name = "Parte do corpo para mirar (Aimbot)",
-	Options = {"Head", "Torso", "HumanoidRootPart"},
-	CurrentOption = "HumanoidRootPart",
-	Callback = function(part)
-		getgenv().aimPart = part
-	end,
-})
+    if box then box.Visible = espBoxesEnabled and espEnabled end
+    if nameBillboard then nameBillboard.Enabled = espNamesEnabled and espEnabled end
+    if distBillboard then distBillboard.Enabled = espDistanceEnabled and espEnabled end
+end
 
-aimbotTab:CreateToggle({
-	Name = "Mira Suave (Smooth)",
-	CurrentValue = true,
-	Callback = function(v)
-		getgenv().smoothAiming = v
-	end,
-})
+-- Main ESP update loop
+spawn(function()
+    while true do
+        if espEnabled then
+            for _, player in pairs(game.Players:GetPlayers()) do
+                if player ~= game.Players.LocalPlayer then
+                    if player.Character and player.Character:FindFirstChild("Head") then
+                        if not player.Character.Head:FindFirstChild("ESPFolder") then
+                            CreateESPForPlayer(player)
+                        else
+                            UpdateESPVisuals(player)
+                        end
+                        UpdateDistance(player)
+                        UpdateVisibility(player)
+                    end
+                end
+            end
+        end
+        wait(updateRate)
+    end
+end)
 
-aimbotTab:CreateSlider({
-	Name = "Velocidade da Mira Suave",
-	Range = {1, 20},
-	Increment = 1,
-	CurrentValue = 8,
-	Callback = function(v)
-		getgenv().smoothSpeed = v
-	end,
-})
+-- Atualiza ESP para novos jogadores que entrarem
+game.Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        wait(1) -- espera carregar a character
+        if espEnabled and player ~= game.Players.LocalPlayer then
+            CreateESPForPlayer(player)
+        end
+    end)
+end)
+
+print("[ESP] Script ESP Universal carregado com sucesso")
 
 -- === Aba Movement Completa ===
 
